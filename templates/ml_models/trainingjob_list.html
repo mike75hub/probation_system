@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Training Jobs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Training Jobs</h1>
+        <div>
+            <a href="{% url 'ml_models:train_model' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+                <i class="fas fa-plus fa-sm text-white-50"></i> Start Training
+            </a>
+            <a href="{% url 'ml_models:ml_dashboard' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> ML Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Jobs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Completed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Failed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ failed_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Running</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ running_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-spinner fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filter Training Jobs
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="running" {% if request.GET.status == "running" %}selected{% endif %}>Running</option>
+                        <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+                        <option value="failed" {% if request.GET.status == "failed" %}selected{% endif %}>Failed</option>
+                        <option value="pending" {% if request.GET.status == "pending" %}selected{% endif %}>Pending</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           value="{{ request.GET.search }}" placeholder="Search by job ID, model name, or error...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-search mr-2"></i>Filter
+                        </button>
+                        <a href="{% url 'ml_models:trainingjob_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Training Jobs Table -->
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Training Jobs</h6>
+            <span class="badge badge-primary">{{ page_obj.paginator.count }} total</span>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Model</th>
+                            <th>Dataset</th>
+                            <th>Status</th>
+                            <th>Started</th>
+                            <th>Completed</th>
+                            <th>Duration</th>
+                            <th>Metrics</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in page_obj %}
+                        <tr>
+                            <td>
+                                <code class="small">{{ job.job_id }}</code>
+                            </td>
+                            <td>
+                                {% if job.ml_model %}
+                                <a href="{% url 'ml_models:model_detail' job.ml_model.pk %}">
+                                    {{ job.ml_model.name }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">No model</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.dataset %}
+                                {{ job.dataset.name }}
+                                {% else %}
+                                <span class="text-muted">No dataset</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.status == 'running' %}
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-spinner fa-spin"></i> Running
+                                </span>
+                                {% elif job.status == 'completed' %}
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check"></i> Completed
+                                </span>
+                                {% elif job.status == 'failed' %}
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-times"></i> Failed
+                                </span>
+                                {% elif job.status == 'pending' %}
+                                <span class="badge badge-info">
+                                    <i class="fas fa-clock"></i> Pending
+                                </span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ job.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ job.created_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if job.completed_at %}
+                                {{ job.completed_at|date:"M d, Y H:i" }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.completed_at %}
+                                {% with duration=job.completed_at|timeuntil:job.created_at %}
+                                {{ duration }}
+                                {% endwith %}
+                                {% else %}
+                                <span class="text-muted">In progress</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if job.metrics %}
+                                <div class="small">
+                                    {% if job.metrics.accuracy %}
+                                    <strong>Accuracy:</strong> {{ job.metrics.accuracy|floatformat:2 }}%<br>
+                                    {% endif %}
+                                    {% if job.metrics.f1_score %}
+                                    <strong>F1 Score:</strong> {{ job.metrics.f1_score|floatformat:2 }}<br>
+                                    {% endif %}
+                                    {% if job.metrics.training_time %}
+                                    <strong>Time:</strong> {{ job.metrics.training_time|floatformat:2 }}s
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">No metrics</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'ml_models:trainingjob_detail' job.pk %}" class="btn btn-info btn-sm" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if job.error_message %}
+                                <button class="btn btn-danger btn-sm" title="View Error" 
+                                        onclick="alert('Error: {{ job.error_message|escapejs }}')">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Last
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tasks fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No training jobs found</h4>
+                <p class="text-muted">Try adjusting your filters or start your first training job.</p>
+                <a href="{% url 'ml_models:train_model' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus mr-2"></i>Start Training
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Jobs by Status Chart -->
+    <div class="card shadow mt-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-chart-pie"></i> Jobs by Status
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Status</th>
+                            <th>Count</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in jobs_by_status %}
+                        <tr>
+                            <td>
+                                {% if item.status == 'completed' %}
+                                <span class="badge badge-success">Completed</span>
+                                {% elif item.status == 'running' %}
+                                <span class="badge badge-warning">Running</span>
+                                {% elif item.status == 'failed' %}
+                                <span class="badge badge-danger">Failed</span>
+                                {% elif item.status == 'pending' %}
+                                <span class="badge badge-info">Pending</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ item.status|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.count }}</td>
+                            <td>
+                                {% if total_jobs > 0 %}
+                                {{ item.count|floatformat:0|divisibleby:total_jobs|yesno:"0,100"|floatformat:1 }}%
+                                {% else %}
+                                0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No training job data available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

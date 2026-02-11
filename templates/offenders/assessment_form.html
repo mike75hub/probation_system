@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Assessment - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Basic Information</h5>
+                                {{ form.offender|as_crispy_field }}
+                                {{ form.assessment_date|as_crispy_field }}
+                                {{ form.assessed_by|as_crispy_field }}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Criminal History</h5>
+                                {{ form.criminal_history|as_crispy_field }}
+                                
+                                <h5 class="mt-4">Social Factors</h5>
+                                {{ form.education_level|as_crispy_field }}
+                                {{ form.employment_status|as_crispy_field }}
+                                {{ form.employment_duration|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <h5>Behavioral Factors</h5>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.substance_abuse|as_crispy_field }}
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.mental_health_issues|as_crispy_field }}
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.anger_issues|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Support Systems (1-5 Scale)</h5>
+                                {{ form.family_support|as_crispy_field }}
+                                {{ form.peer_support|as_crispy_field }}
+                                {{ form.community_ties|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <h5>Risk Factors (1-5 Scale)</h5>
+                                {{ form.financial_stability|as_crispy_field }}
+                                {{ form.housing_stability|as_crispy_field }}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Recommendations & Notes</h5>
+                                {{ form.recommended_interventions|as_crispy_field }}
+                                {{ form.notes|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'offender_detail' offender.pk %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-calculator me-2"></i>Calculate & Save
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,290 @@
+<!-- Officer Dashboard Content -->
+<div class="row">
+    <!-- Caseload Overview -->
+    <div class="col-lg-8">
+        <div class="widget-card">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-people me-2"></i>My Caseload
+                </h5>
+                <p class="widget-subtitle">
+                    {{ total_cases }} active cases, {{ high_risk_cases }} high risk
+                </p>
+            </div>
+            <div class="widget-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h3 class="text-primary">{{ total_cases }}</h3>
+                            <p class="text-muted mb-0">Total Cases</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h3 class="text-danger">{{ high_risk_cases }}</h3>
+                            <p class="text-muted mb-0">High Risk</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h3 class="text-success">{{ pending_checkins }}</h3>
+                            <p class="text-muted mb-0">Pending Check-ins</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Recent Cases</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Offender</th>
+                                    <th>Risk</th>
+                                    <th>Next Check-in</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for case in my_cases|slice:":5" %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'offenders:detail' case.offender.id %}">
+                                            {{ case.offender.first_name }} {{ case.offender.last_name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if case.offender.risk_level == 'high' %}danger{% elif case.offender.risk_level == 'medium' %}warning{% else %}success{% endif %}">
+                                            {{ case.offender.risk_level|default:"Unknown" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% with case.next_checkin as next_checkin %}
+                                            {% if next_checkin %}
+                                                {{ next_checkin|date:"M d" }}
+                                            {% else %}
+                                                Not scheduled
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if case.status == 'active' %}primary{% elif case.status == 'violated' %}danger{% else %}success{% endif %}">
+                                            {{ case.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">
+                                        No active cases
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Tasks -->
+    <div class="col-lg-4">
+        <div class="widget-card">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-calendar-check me-2"></i>Upcoming Tasks
+                </h5>
+                <p class="widget-subtitle">Today's schedule</p>
+            </div>
+            <div class="widget-body">
+                <div class="list-group list-group-flush">
+                    {% for task in todays_schedule %}
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="icon-circle bg-{{ task.color|default:'primary' }}">
+                                    <i class="bi {{ task.icon|default:'bi-calendar' }} text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">{{ task.title }}</h6>
+                                <small class="text-muted">{{ task.time|default:"" }}</small>
+                            </div>
+                            <div class="flex-shrink-0">
+                                {% if task.priority == 'high' %}
+                                    <span class="badge bg-danger">High</span>
+                                {% elif task.priority == 'medium' %}
+                                    <span class="badge bg-warning">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-success">Low</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle fa-3x mb-3"></i>
+                        <p>No tasks scheduled for today</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-end mt-3">
+                    <a href="{% url 'monitoring:checkin_list' %}" class="btn btn-sm btn-outline-primary">
+                        View All Tasks
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts and Notifications -->
+{% if alerts %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="widget-card border-warning">
+            <div class="widget-header bg-warning text-dark">
+                <h5 class="widget-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Alerts
+                </h5>
+                <p class="widget-subtitle">Requires your attention</p>
+            </div>
+            <div class="widget-body">
+                <div class="alert-list">
+                    {% for alert in alerts %}
+                    <div class="alert alert-{{ alert.type|default:'warning' }} alert-dismissible fade show" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-{{ alert.icon|default:'exclamation-triangle' }} me-3 fs-4"></i>
+                            <div class="flex-grow-1">
+                                <h6 class="alert-heading mb-1">{{ alert.title }}</h6>
+                                <p class="mb-0">{{ alert.message }}</p>
+                                {% if alert.details %}
+                                <small class="text-muted">{{ alert.details }}</small>
+                                {% endif %}
+                            </div>
+                            {% if alert.action_url %}
+                            <div class="flex-shrink-0 ms-3">
+                                <a href="{{ alert.action_url }}" class="btn btn-sm btn-{{ alert.type|default:'warning' }}">
+                                    {{ alert.action_text|default:'View' }}
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Check-ins -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="widget-card">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-clock-history me-2"></i>Recent Check-ins
+                </h5>
+                <p class="widget-subtitle">Latest offender check-ins</p>
+            </div>
+            <div class="widget-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Offender</th>
+                                <th>Type</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for checkin in recent_checkins %}
+                            <tr>
+                                <td>{{ checkin.offender }}</td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ checkin.checkin_type|default:"Regular" }}
+                                    </span>
+                                </td>
+                                <td>{{ checkin.checkin_time|date:"H:i" }}</td>
+                                <td>
+                                    {% if checkin.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% elif checkin.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Missed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    No recent check-ins
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="widget-card">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-clipboard-check me-2"></i>Upcoming Assessments
+                </h5>
+                <p class="widget-subtitle">Scheduled risk assessments</p>
+            </div>
+            <div class="widget-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Offender</th>
+                                <th>Assessment Type</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assessment in upcoming_assessments %}
+                            <tr>
+                                <td>{{ assessment.offender }}</td>
+                                <td>{{ assessment.assessment_type }}</td>
+                                <td>
+                                    {{ assessment.next_assessment_date|date:"M d, Y" }}
+                                    {% if assessment.is_overdue %}
+                                        <span class="badge bg-danger ms-1">Overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if assessment.is_completed %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    No upcoming assessments
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

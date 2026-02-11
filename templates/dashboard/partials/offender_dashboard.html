@@ -1,0 +1,286 @@
+<!-- Offender Dashboard Content -->
+{% if error %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{ error }}
+</div>
+{% else %}
+<div class="row">
+    <!-- Progress Overview -->
+    <div class="col-lg-8">
+        <div class="widget-card">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-graph-up me-2"></i>My Progress
+                </h5>
+                <p class="widget-subtitle">
+                    {{ days_remaining }} days remaining in probation
+                </p>
+            </div>
+            <div class="widget-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h3 class="text-primary">{{ compliance_rate }}%</h3>
+                            <p class="text-muted mb-0">Compliance Rate</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h3 class="text-success">{{ completed_programs }}</h3>
+                            <p class="text-muted mb-0">Programs Completed</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h3 class="text-info">{{ total_checkins }}</h3>
+                            <p class="text-muted mb-0">Total Check-ins</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Chart -->
+                <div class="mt-4">
+                    <h6>Compliance Trend</h6>
+                    <canvas id="complianceChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Current Programs -->
+        <div class="widget-card mt-4">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-mortarboard me-2"></i>Current Programs
+                </h5>
+                <p class="widget-subtitle">Active rehabilitation programs</p>
+            </div>
+            <div class="widget-body">
+                {% for program in current_programs_list %}
+                <div class="program-item mb-3 p-3 border rounded">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ program.program.name }}</h6>
+                            <p class="text-muted mb-0 small">{{ program.program.description|truncatewords:20 }}</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="progress" style="width: 150px; height: 10px;">
+                                {% with program.get_progress as progress %}
+                                <div class="progress-bar bg-success" 
+                                     role="progressbar" 
+                                     style="width: {{ progress }}%"
+                                     aria-valuenow="{{ progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                                {% endwith %}
+                            </div>
+                            <small class="text-muted">
+                                {% with program.get_progress as progress %}
+                                {{ progress }}% complete
+                                {% endwith %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-mortarboard fa-3x mb-3"></i>
+                    <p>No active programs</p>
+                </div>
+                {% endfor %}
+                <div class="text-end">
+                    <a href="{% url 'programs:my_programs' %}" class="btn btn-sm btn-outline-primary">
+                        View All Programs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Requirements & Upcoming -->
+    <div class="col-lg-4">
+        <!-- Requirements -->
+        <div class="widget-card">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-list-check me-2"></i>Requirements
+                </h5>
+                <p class="widget-subtitle">Probation requirements</p>
+            </div>
+            <div class="widget-body">
+                <div class="list-group list-group-flush">
+                    {% for req in requirements %}
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                {% if req.status == 'completed' %}
+                                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                {% elif req.status == 'in_progress' %}
+                                    <i class="bi bi-clock-fill text-warning fs-5"></i>
+                                {% else %}
+                                    <i class="bi bi-circle text-secondary fs-5"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">{{ req.name }}</h6>
+                                <small class="text-muted">Due: {{ req.due }}</small>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <span class="badge bg-{% if req.status == 'completed' %}success{% elif req.status == 'in_progress' %}warning{% else %}secondary{% endif %}">
+                                    {{ req.status|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-check-circle fa-3x mb-3"></i>
+                        <p>No requirements listed</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Upcoming Check-ins -->
+        <div class="widget-card mt-4">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-calendar me-2"></i>Upcoming Check-ins
+                </h5>
+                <p class="widget-subtitle">Scheduled meetings</p>
+            </div>
+            <div class="widget-body">
+                <div class="list-group list-group-flush">
+                    {% for checkin in upcoming_checkins %}
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="icon-circle bg-primary">
+                                    <i class="bi bi-calendar-check text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">{{ checkin.checkin_type|default:"Regular Check-in" }}</h6>
+                                <small class="text-muted">
+                                    {{ checkin.scheduled_date|date:"M d, Y" }} at {{ checkin.scheduled_time|default:"TBD" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-calendar fa-3x mb-3"></i>
+                        <p>No upcoming check-ins</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-end mt-3">
+                    <a href="{% url 'monitoring:checkin_create' %}" class="btn btn-sm btn-outline-primary">
+                        Schedule Check-in
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Officer Contact -->
+        {% if probation_officer %}
+        <div class="widget-card mt-4">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-person-badge me-2"></i>Probation Officer
+                </h5>
+                <p class="widget-subtitle">Your assigned officer</p>
+            </div>
+            <div class="widget-body">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle fa-4x text-primary"></i>
+                    </div>
+                    <h5>{{ probation_officer.get_full_name|default:probation_officer.username }}</h5>
+                    <p class="text-muted mb-2">{{ probation_officer.email|default:"No email" }}</p>
+                    <p class="text-muted mb-3">{{ probation_officer.phone|default:"No phone" }}</p>
+                    <a href="{% url 'communications:new' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-chat me-1"></i>Send Message
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Rewards & Incentives -->
+{% if rewards %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="widget-card border-success">
+            <div class="widget-header bg-success text-white">
+                <h5 class="widget-title">
+                    <i class="bi bi-award me-2"></i>Rewards & Incentives
+                </h5>
+                <p class="widget-subtitle">Earned for good compliance</p>
+            </div>
+            <div class="widget-body">
+                <div class="row">
+                    {% for reward in rewards %}
+                    <div class="col-md-3">
+                        <div class="text-center p-3">
+                            <div class="icon-circle bg-warning mb-3 mx-auto">
+                                <i class="bi bi-{{ reward.icon|default:'award' }} text-white fs-4"></i>
+                            </div>
+                            <h6>{{ reward.name }}</h6>
+                            <p class="text-muted small">{{ reward.description }}</p>
+                            <small class="badge bg-success">{{ reward.earned_date|date:"M d" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    // Compliance Chart for offender dashboard
+    $(document).ready(function() {
+        var complianceCtx = document.getElementById('complianceChart').getContext('2d');
+        var complianceChart = new Chart(complianceCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Compliance Rate',
+                    data: [85, 88, 90, 87, 92, 95],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 70,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}

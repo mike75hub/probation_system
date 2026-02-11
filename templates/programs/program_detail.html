@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'programs:program_update' program.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit fa-sm mr-2"></i>Edit Program
+            </a>
+            <a href="{% url 'programs:program_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left fa-sm mr-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Program Information -->
+    <div class="row">
+        <!-- Left Column - Program Details -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Program Details</h6>
+                    <span class="badge badge-{{ program.status == 'active'|yesno:'success,secondary,primary,warning' }}">
+                        {{ program.status|title }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="font-weight-bold">{{ program.name }}</h5>
+                            <p class="text-muted">{{ program.description }}</p>
+                            
+                            <div class="mt-4">
+                                <h6 class="font-weight-bold">Program Information</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Program Type:</td>
+                                        <td>
+                                            <span class="badge badge-info">
+                                                {{ program.get_program_type_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Category:</td>
+                                        <td>
+                                            {% if program.category %}
+                                            <span class="badge badge-secondary">{{ program.category.name }}</span>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Duration:</td>
+                                        <td>
+                                            {% if program.duration_weeks %}
+                                            {{ program.duration_weeks }} weeks
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Frequency:</td>
+                                        <td>{{ program.frequency|title }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Target Risk Level:</td>
+                                        <td>{{ program.get_target_risk_level_display }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Created By:</td>
+                                        <td>{{ program.created_by.get_full_name|default:program.created_by.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Created On:</td>
+                                        <td>{{ program.created_at|date:"F d, Y" }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold mt-3">Objectives</h6>
+                            <div class="card border-left-primary shadow h-100">
+                                <div class="card-body">
+                                    <p>{{ program.objectives|linebreaks }}</p>
+                                </div>
+                            </div>
+                            
+                            <h6 class="font-weight-bold mt-4">Outcome Metrics</h6>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="card border-left-success shadow">
+                                        <div class="card-body">
+                                            <h5 class="font-weight-bold text-success">{{ completion_rate|floatformat:1 }}%</h5>
+                                            <small class="text-muted">Completion Rate</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card border-left-info shadow">
+                                        <div class="card-body">
+                                            <h5 class="font-weight-bold text-info">{{ active_enrollments }}</h5>
+                                            <small class="text-muted">Active Enrollments</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enrollments -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Enrollments ({{ enrollments.count }})</h6>
+                    <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#enrollModal">
+                        <i class="fas fa-user-plus fa-sm mr-2"></i>Enroll Offender
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if enrollments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Offender</th>
+                                    <th>Enrollment Date</th>
+                                    <th>Status</th>
+                                    <th>Attendance Rate</th>
+                                    <th>Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for enrollment in enrollments %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'offenders:offender_detail' enrollment.offender.pk %}" class="font-weight-bold">
+                                            {{ enrollment.offender }}
+                                        </a>
+                                    </td>
+                                    <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if enrollment.status == 'active' %}
+                                        <span class="badge badge-success">Active</span>
+                                        {% elif enrollment.status == 'completed' %}
+                                        <span class="badge badge-primary">Completed</span>
+                                        {% elif enrollment.status == 'dropped_out' %}
+                                        <span class="badge badge-danger">Dropped Out</span>
+                                        {% elif enrollment.status == 'transferred' %}
+                                        <span class="badge badge-warning">Transferred</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary">{{ enrollment.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ enrollment.attendance_rate|default:0 }}%;" 
+                                                 aria-valuenow="{{ enrollment.attendance_rate|default:0 }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ enrollment.attendance_rate|default:0|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if enrollment.progress_notes %}
+                                        <button type="button" class="btn btn-sm btn-info" data-toggle="popover" 
+                                                data-content="{{ enrollment.progress_notes }}" title="Progress Notes">
+                                            <i class="fas fa-sticky-note"></i>
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'programs:enrollment_detail' enrollment.pk %}" 
+                                               class="btn btn-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'programs:enrollment_update' enrollment.pk %}" 
+                                               class="btn btn-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">
+                        <i class="fas fa-users fa-3x mb-3"></i><br>
+                        No enrollments yet. <button type="button" class="btn btn-link p-0" 
+                        data-toggle="modal" data-target="#enrollModal">Enroll an offender</button> to get started.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Sessions & Quick Stats -->
+        <div class="col-lg-4">
+            <!-- Sessions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Sessions ({{ sessions.count }})</h6>
+                    <a href="#" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#sessionModal">
+                        <i class="fas fa-plus fa-sm mr-2"></i>Add Session
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if sessions %}
+                    <div class="list-group">
+                        {% for session in sessions %}
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Session {{ session.session_number }}</h6>
+                                <small>{{ session.date|date:"M d" }}</small>
+                            </div>
+                            <p class="mb-1">{{ session.topic|truncatechars:50 }}</p>
+                            <small class="text-muted">
+                                {{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}
+                                {% if session.facilitator %}
+                                • Facilitator: {{ session.facilitator }}
+                                {% endif %}
+                            </small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">
+                        <i class="fas fa-calendar fa-3x mb-3"></i><br>
+                        No sessions scheduled yet.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Program Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Program Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-primary">{{ enrollments.count }}</h4>
+                                <small class="text-muted">Total Enrollments</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-success">{{ active_enrollments }}</h4>
+                                <small class="text-muted">Active Enrollments</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-info">{{ completion_rate|floatformat:1 }}%</h4>
+                                <small class="text-muted">Completion Rate</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-warning">{{ sessions.count }}</h4>
+                                <small class="text-muted">Total Sessions</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Capacity Usage -->
+                    {% if program.max_capacity %}
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold">Capacity Usage</h6>
+                        <div class="progress" style="height: 25px;">
+                            {% with usage_percentage=enrollments.count|divisibleby:program.max_capacity|floatformat:2 %}
+                            <div class="progress-bar bg-{% if usage_percentage < 80 %}success{% elif usage_percentage < 95 %}warning{% else %}danger{% endif %}" 
+                                 role="progressbar" style="width: {{ usage_percentage }}%;">
+                                {{ enrollments.count }}/{{ program.max_capacity }} ({{ usage_percentage }}%)
+                            </div>
+                            {% endwith %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action" data-toggle="modal" data-target="#enrollModal">
+                            <i class="fas fa-user-plus text-primary mr-2"></i>Enroll Offender
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" data-toggle="modal" data-target="#sessionModal">
+                            <i class="fas fa-calendar-plus text-success mr-2"></i>Schedule Session
+                        </a>
+                        <a href="{% url 'programs:program_update' program.pk %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-edit text-warning mr-2"></i>Edit Program
+                        </a>
+                        <a href="{% url 'programs:program_delete' program.pk %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-trash mr-2"></i>Delete Program
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enroll Modal -->
+<div class="modal fade" id="enrollModal" tabindex="-1" role="dialog" aria-labelledby="enrollModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="enrollModalLabel">Enroll Offender in Program</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'programs:enrollment_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ enrollment_form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Enroll Offender</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Session Modal -->
+<div class="modal fade" id="sessionModal" tabindex="-1" role="dialog" aria-labelledby="sessionModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sessionModalLabel">Add Session</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'programs:session_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="program" value="{{ program.pk }}">
+                    <div class="form-group">
+                        <label for="session_number">Session Number</label>
+                        <input type="number" class="form-control" id="session_number" name="session_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="topic">Topic</label>
+                        <input type="text" class="form-control" id="topic" name="topic" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="start_time">Start Time</label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="end_time">End Time</label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="facilitator">Facilitator</label>
+                        <input type="text" class="form-control" id="facilitator" name="facilitator">
+                    </div>
+                    <div class="form-group">
+                        <label for="objectives">Objectives</label>
+                        <textarea class="form-control" id="objectives" name="objectives" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Session</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize popovers
+    $('[data-toggle="popover"]').popover({
+        trigger: 'hover',
+        placement: 'top'
+    });
+    
+    // Set today's date as default for session date
+    var today = new Date().toISOString().split('T')[0];
+    $('#date').val(today);
+});
+</script>
+{% endblock %}

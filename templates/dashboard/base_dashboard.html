@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        min-height: calc(100vh - 200px);
+    }
+    
+    .stat-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    
+    .stat-value {
+        font-size: clamp(1.5rem, 2.2vw, 2.25rem);
+        font-weight: 700;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: var(--secondary-color);
+    }
+    
+    .trend-up {
+        color: #28a745;
+    }
+    
+    .trend-down {
+        color: #dc3545;
+    }
+    
+    .trend-stable {
+        color: #6c757d;
+    }
+    
+    .widget-card {
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        background: var(--surface);
+        margin-bottom: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .widget-header {
+        background: var(--surface-muted);
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .widget-body {
+        padding: 20px;
+    }
+    
+    .widget-title {
+        font-weight: 700;
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .widget-subtitle {
+        font-size: 0.9rem;
+        color: var(--secondary-color);
+        margin: 5px 0 0 0;
+    }
+    
+    .activity-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .activity-content {
+        flex-grow: 1;
+    }
+    
+    .activity-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    /* Loading animation */
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .loading-spinner.active {
+        display: block;
+    }
+    
+    /* Grid layout for widgets */
+    .grid-stack-item {
+        margin-bottom: 20px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .stat-value {
+            font-size: 1.5rem;
+        }
+        
+        .widget-body {
+            padding: 15px;
+        }
+        
+        .widget-header {
+            padding: 12px 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    {% block dashboard_content %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dashboard JavaScript
+    $(document).ready(function() {
+        // Auto-refresh dashboard data
+        let refreshInterval = {{ refresh_interval|default:300 }};
+        if (refreshInterval > 0) {
+            setInterval(function() {
+                refreshDashboardData();
+            }, refreshInterval * 1000);
+        }
+        
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Initialize popovers
+        $('[data-toggle="popover"]').popover();
+        
+        // Widget resize handler
+        $(window).on('resize', function() {
+            adjustWidgetHeights();
+        });
+        
+        // Mark notifications as read when clicked
+        $('.notification-item').on('click', function() {
+            let notificationId = $(this).data('id');
+            if (notificationId) {
+                markNotificationAsRead(notificationId);
+            }
+        });
+    });
+    
+    function refreshDashboardData() {
+        // Show loading indicator
+        $('.loading-spinner').addClass('active');
+        
+        // Refresh stats
+        $.getJSON("{% url 'dashboard:stats_api' %}", function(data) {
+            updateStats(data);
+            $('.loading-spinner').removeClass('active');
+        }).fail(function() {
+            console.error('Failed to refresh dashboard data');
+            $('.loading-spinner').removeClass('active');
+        });
+    }
+    
+    function updateStats(data) {
+        // Update statistic cards
+        $('.stat-value').each(function() {
+            let statId = $(this).data('stat');
+            if (data[statId] !== undefined) {
+                $(this).text(data[statId]);
+            }
+        });
+        
+        // Update charts if any
+        if (typeof updateCharts === 'function') {
+            updateCharts(data);
+        }
+    }
+    
+    function markNotificationAsRead(notificationId) {
+        $.ajax({
+            url: "{% url 'dashboard:notifications_api' %}",
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                action: 'mark_read',
+                notification_id: notificationId
+            }),
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('.notification-item[data-id="' + notificationId + '"]').fadeOut();
+                    updateNotificationCount();
+                }
+            }
+        });
+    }
+    
+    function updateNotificationCount() {
+        $.getJSON("{% url 'dashboard:notifications_api' %}", function(data) {
+            $('.notification-count').text(data.count);
+        });
+    }
+    
+    function adjustWidgetHeights() {
+        // Adjust widget heights based on content
+        $('.widget-card').each(function() {
+            let contentHeight = $(this).find('.widget-body').height();
+            let minHeight = 200;
+            let newHeight = Math.max(contentHeight + 60, minHeight);
+            $(this).height(newHeight);
+        });
+    }
+    
+    // Utility function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

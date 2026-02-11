@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'programs:enrollment_list' %}" class="d-none d-sm-inline-block btn btn-secondary">
+            <i class="fas fa-arrow-left fa-sm mr-2"></i>Cancel
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Enrollment Information</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.offender|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.program|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dates -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.enrollment_date|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.expected_completion_date|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status and Details -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.status|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.attendance_rate|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Referral Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.referred_by|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.referral_reason|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress and Notes -->
+                        <div class="form-group">
+                            {{ form.progress_notes|as_crispy_field }}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.additional_notes|as_crispy_field }}
+                        </div>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save mr-2"></i>Save Enrollment
+                            </button>
+                            <a href="{% url 'programs:enrollment_list' %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                            
+                            {% if form.instance.pk %}
+                            <a href="{% url 'programs:enrollment_delete' form.instance.pk %}" class="btn btn-danger float-right">
+                                <i class="fas fa-trash mr-2"></i>Delete Enrollment
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Help Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="font-weight-bold text-primary">Selecting Offender</h6>
+                    <p class="small text-muted">Choose an offender who meets the program's eligibility criteria and risk level.</p>
+                    
+                    <h6 class="font-weight-bold text-primary mt-3">Program Selection</h6>
+                    <p class="small text-muted">Ensure the selected program is active and accepting enrollments.</p>
+                    
+                    <h6 class="font-weight-bold text-primary mt-3">Enrollment Date</h6>
+                    <p class="small text-muted">Use the actual date when the offender started the program.</p>
+                    
+                    <h6 class="font-weight-bold text-primary mt-3">Expected Completion</h6>
+                    <p class="small text-muted">Calculate based on program duration and start date.</p>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Tip:</strong> After saving, you can track attendance and progress for this enrollment.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Offender Information -->
+            {% if form.instance.offender %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Selected Offender</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="font-weight-bold">{{ form.instance.offender }}</h6>
+                    <p class="small text-muted mb-2">Case: {{ form.instance.offender.case_number|default:"No case number" }}</p>
+                    <p class="small text-muted mb-2">Risk Level: {{ form.instance.offender.get_risk_level_display|default:"Not assessed" }}</p>
+                    <p class="small text-muted">Officer: {{ form.instance.offender.probation_officer|default:"Not assigned" }}</p>
+                    
+                    <a href="{% url 'offenders:offender_detail' form.instance.offender.pk %}" class="btn btn-sm btn-outline-primary btn-block mt-2">
+                        View Offender Details
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Program Information -->
+            {% if form.instance.program %}
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Selected Program</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="font-weight-bold">{{ form.instance.program.name }}</h6>
+                    <p class="small text-muted mb-2">{{ form.instance.program.description|truncatechars:80 }}</p>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="small mb-1"><strong>Type:</strong> {{ form.instance.program.get_program_type_display }}</p>
+                            <p class="small mb-1"><strong>Duration:</strong> {{ form.instance.program.duration_weeks }} weeks</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="small mb-1"><strong>Status:</strong> {{ form.instance.program.status|title }}</p>
+                            <p class="small mb-1"><strong>Capacity:</strong> {{ form.instance.program.max_capacity|default:"Unlimited" }}</p>
+                        </div>
+                    </div>
+                    
+                    <a href="{% url 'programs:program_detail' form.instance.program.pk %}" class="btn btn-sm btn-outline-primary btn-block mt-2">
+                        View Program Details
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Set default enrollment date to today
+    var today = new Date().toISOString().split('T')[0];
+    $('#id_enrollment_date').val(today);
+    
+    // Calculate expected completion date based on program duration
+    $('#id_program').change(function() {
+        var programId = $(this).val();
+        if (programId) {
+            // In a real implementation, you would fetch program duration via AJAX
+            // For now, we'll set a default of 12 weeks from today
+            var startDate = new Date($('#id_enrollment_date').val());
+            var weeks = 12; // Default duration
+            var completionDate = new Date(startDate);
+            completionDate.setDate(startDate.getDate() + (weeks * 7));
+            
+            var formattedDate = completionDate.toISOString().split('T')[0];
+            $('#id_expected_completion_date').val(formattedDate);
+        }
+    });
+    
+    // Update completion date when enrollment date changes
+    $('#id_enrollment_date').change(function() {
+        $('#id_program').trigger('change');
+    });
+});
+</script>
+{% endblock %}

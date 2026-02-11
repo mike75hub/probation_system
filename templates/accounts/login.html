@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Probation Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .login-card {
+        max-width: 400px;
+        width: 100%;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .login-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .login-header i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    
+    .login-body {
+        padding: 30px;
+        background: white;
+    }
+    
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    
+    .form-floating label {
+        color: #666;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    .btn-login {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        padding: 12px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+    }
+    
+    .register-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    .demo-info {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .demo-account {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 10px;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid;
+    }
+    
+    .demo-admin { border-left-color: #e74c3c; }
+    .demo-officer { border-left-color: #3498db; }
+    .demo-offender { border-left-color: #27ae60; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fas fa-lock"></i>
+            <h2 class="mb-0">Secure Login</h2>
+            <p class="mb-0 mt-2" style="opacity: 0.9;">Access the Probation Management System</p>
+        </div>
+        
+        <div class="login-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Invalid username or password. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+                
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" required autofocus>
+                    <label for="username"><i class="fas fa-user me-2"></i>Username</label>
+                </div>
+                
+                <div class="form-floating">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                    <label for="password"><i class="fas fa-key me-2"></i>Password</label>
+                </div>
+                
+                <div class="mb-3 text-end">
+                    <a href="#" class="text-decoration-none" style="color: #3498db;">Forgot Password?</a>
+                </div>
+                
+                <button type="submit" class="btn-login mb-3">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login to System
+                </button>
+                
+                <!-- Registration Section -->
+                <div class="register-section">
+                    <h6 class="mb-3"><i class="fas fa-user-plus me-2"></i>New User?</h6>
+                    <p class="mb-3">Create a new account to access the system</p>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-user-plus me-2"></i>Register New Account
+                    </a>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'home' %}" class="text-decoration-none" style="color: #666;">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Home
+                    </a>
+                </div>
+            </form>
+            
+            <div class="demo-info">
+                <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Demo Accounts</h6>
+                
+                <div class="demo-account demo-admin">
+                    <div class="me-3">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-crown text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <strong>Admin</strong><br>
+                        <small>admin / admin123</small>
+                    </div>
+                </div>
+                
+                <div class="demo-account demo-officer">
+                    <div class="me-3">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-user-shield text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <strong>Probation Officer</strong><br>
+                        <small>officer1 / officer123</small>
+                    </div>
+                </div>
+                
+                <div class="demo-account demo-offender">
+                    <div class="me-3">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #27ae60 0%, #229954 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <strong>Offender</strong><br>
+                        <small>offender1 / offender123</small>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">Use these accounts for testing purposes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

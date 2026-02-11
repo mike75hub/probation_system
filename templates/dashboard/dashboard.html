@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Probation Management System{% endblock %}
+
+{% block content %}
+<!-- Welcome Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1"><i class="fas fa-tachometer-alt me-2"></i>Welcome to Dashboard</h2>
+                        <p class="text-muted mb-0">
+                            Hello, <strong>{{ user.get_full_name|default:user.username }}</strong>! 
+                            <span class="badge badge-role badge-{{ user.role }} ms-2">
+                                {{ user.get_role_display }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted">
+                            <i class="fas fa-calendar me-1"></i> {{ now|date:"F d, Y" }}
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-clock me-1"></i> {{ now|date:"h:i A" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-4">
+        <div class="stat-card" style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);">
+            <i class="fas fa-users"></i>
+            <h3>24</h3>
+            <p>Active Cases</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="stat-card" style="background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);">
+            <i class="fas fa-check-circle"></i>
+            <h3>92%</h3>
+            <p>Compliance Rate</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="stat-card" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%);">
+            <i class="fas fa-chart-line"></i>
+            <h3>15%</h3>
+            <p>Risk Reduction</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="stat-card" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+            <i class="fas fa-robot"></i>
+            <h3>8</h3>
+            <p>AI Predictions</p>
+        </div>
+    </div>
+</div>
+
+<!-- Role-Based Content -->
+{% if user.role == 'admin' %}
+<!-- Admin Dashboard -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>System Administration</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-database fa-3x text-primary mb-3"></i>
+                                <h5>Dataset Management</h5>
+                                <p class="text-muted">Upload and manage training datasets</p>
+                                <button class="btn btn-outline-primary">Manage Datasets</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-robot fa-3x text-success mb-3"></i>
+                                <h5>AI Model Training</h5>
+                                <p class="text-muted">Train and deploy ML models</p>
+                                <button class="btn btn-outline-success">Train Models</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6><i class="fas fa-chart-bar me-2"></i>System Statistics</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Count</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Total Users</td>
+                                    <td>15</td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Active Cases</td>
+                                    <td>24</td>
+                                    <td><span class="badge bg-warning">Monitoring</span></td>
+                                </tr>
+                                <tr>
+                                    <td>ML Models</td>
+                                    <td>3</td>
+                                    <td><span class="badge bg-info">Trained</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add New User
+                    </button>
+                    <button class="btn btn-success">
+                        <i class="fas fa-upload me-2"></i>Upload Dataset
+                    </button>
+                    <button class="btn btn-info">
+                        <i class="fas fa-brain me-2"></i>Train AI Model
+                    </button>
+                    <button class="btn btn-warning">
+                        <i class="fas fa-file-export me-2"></i>Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>System Status</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Database
+                        <span class="badge bg-success">Online</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        ML Service
+                        <span class="badge bg-success">Running</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        File Storage
+                        <span class="badge bg-success">Normal</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        API Gateway
+                        <span class="badge bg-success">Active</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif user.role == 'officer' %}
+<!-- Officer Dashboard -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>My Cases (12)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Offender</th>
+                                <th>Case ID</th>
+                                <th>Risk Level</th>
+                                <th>Next Check-in</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <i class="fas fa-user me-2"></i>
+                                    <strong>John Doe</strong>
+                                </td>
+                                <td>CAS-001</td>
+                                <td><span class="badge bg-danger">High</span></td>
+                                <td>Tomorrow</td>
+                                <td><span class="badge bg-warning">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="fas fa-user me-2"></i>
+                                    <strong>Jane Smith</strong>
+                                </td>
+                                <td>CAS-002</td>
+                                <td><span class="badge bg-success">Low</span></td>
+                                <td>In 3 days</td>
+                                <td><span class="badge bg-success">Compliant</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Today's Tasks</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Case Review</h6>
+                            <small>10:00 AM</small>
+                        </div>
+                        <p class="mb-1">Review CAS-001 progress</p>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Check-in</h6>
+                            <small>2:00 PM</small>
+                        </div>
+                        <p class="mb-1">Monthly check-in with CAS-002</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% elif user.role == 'offender' %}
+<!-- Offender Dashboard -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>My Rehabilitation Progress</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Current Status</h6>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Program Completion</span>
+                                <span>65%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-success" style="width: 65%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Compliance Score</span>
+                                <span>88%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-info" style="width: 88%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>My Information</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-user-shield me-2 text-primary"></i>
+                                <strong>Officer:</strong> John Kamau
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-calendar me-2 text-primary"></i>
+                                <strong>Next Check-in:</strong> Tomorrow
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-graduation-cap me-2 text-primary"></i>
+                                <strong>Current Program:</strong> Vocational Training
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>My Tasks</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox">
+                            <label class="form-check-label">
+                                Daily check-in report
+                            </label>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" checked>
+                            <label class="form-check-label">
+                                Complete counseling session
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Activity (All Roles) -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6>System Initialized</h6>
+                            <small class="text-muted">Just now</small>
+                            <p>Probation Management System is now active and ready for use.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #3498db;
+    }
+    
+    .timeline-content {
+        padding-left: 20px;
+    }
+</style>
+{% endblock %}

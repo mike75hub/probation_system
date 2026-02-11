@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Program{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Delete Program</h1>
+        <a href="{% url 'programs:program_detail' object.pk %}" class="d-none d-sm-inline-block btn btn-secondary">
+            <i class="fas fa-arrow-left fa-sm mr-2"></i>Cancel
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-danger">
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Confirm Deletion
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="alert alert-danger" role="alert">
+                        <h4 class="alert-heading">Warning!</h4>
+                        <p>You are about to delete the following program. This action cannot be undone.</p>
+                        <hr>
+                        <p class="mb-0">All associated data including enrollments, sessions, and attendance records will be permanently deleted.</p>
+                    </div>
+                    
+                    <div class="card border-left-danger shadow mb-4">
+                        <div class="card-body">
+                            <h4 class="font-weight-bold text-danger">{{ object.name }}</h4>
+                            <p class="text-muted">{{ object.description|truncatechars:100 }}</p>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="text-left">
+                                        <p><strong>Type:</strong> {{ object.get_program_type_display }}</p>
+                                        <p><strong>Status:</strong> {{ object.status|title }}</p>
+                                        <p><strong>Duration:</strong> {{ object.duration_weeks }} weeks</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="text-left">
+                                        <p><strong>Enrollments:</strong> {{ object.enrollments.count }}</p>
+                                        <p><strong>Sessions:</strong> {{ object.sessions.count }}</p>
+                                        <p><strong>Created:</strong> {{ object.created_at|date:"M d, Y" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if object.enrollments.count > 0 %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-circle mr-2"></i>
+                                This program has <strong>{{ object.enrollments.count }}</strong> active or completed enrollments.
+                                Deleting it will remove all enrollment records.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="confirm_name" class="font-weight-bold">
+                                Type the program name to confirm deletion:
+                            </label>
+                            <input type="text" class="form-control mt-2" id="confirm_name" 
+                                   placeholder="Type '{{ object.name }}' here" required>
+                            <small class="form-text text-muted">This helps prevent accidental deletions.</small>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                                <i class="fas fa-trash mr-2"></i>Permanently Delete Program
+                            </button>
+                            <a href="{% url 'programs:program_detail' object.pk %}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times mr-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Alternative Actions -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Alternative Actions</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Instead of deleting, consider these alternatives:</p>
+                    <div class="list-group">
+                        <a href="{% url 'programs:program_update' object.pk %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-edit text-primary mr-2"></i>
+                            <strong>Edit Program</strong> - Update program details instead of deleting
+                        </a>
+                        <a href="{% url 'programs:program_update' object.pk %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-pause text-warning mr-2"></i>
+                            <strong>Mark as Inactive</strong> - Keep program data but stop new enrollments
+                        </a>
+                        <a href="{% url 'programs:program_detail' object.pk %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-archive text-info mr-2"></i>
+                            <strong>Archive Program</strong> - Move to archived section
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Enable delete button only when program name is correctly typed
+    $('#confirm_name').on('input', function() {
+        var typedName = $(this).val();
+        var programName = "{{ object.name }}";
+        var deleteButton = $('#deleteButton');
+        
+        if (typedName === programName) {
+            deleteButton.prop('disabled', false);
+            deleteButton.removeClass('btn-danger').addClass('btn-danger');
+        } else {
+            deleteButton.prop('disabled', true);
+            deleteButton.removeClass('btn-danger').addClass('btn-secondary');
+        }
+    });
+    
+    // Confirm deletion on submit
+    $('form').submit(function(e) {
+        var typedName = $('#confirm_name').val();
+        var programName = "{{ object.name }}";
+        
+        if (typedName !== programName) {
+            e.preventDefault();
+            alert('Please type the program name exactly as shown to confirm deletion.');
+            return false;
+        }
+        
+        return confirm('Are you absolutely sure you want to delete this program? This action cannot be undone.');
+    });
+});
+</script>
+{% endblock %}

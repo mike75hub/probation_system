@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Report Dashboards{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Report Dashboards</h1>
+        <div>
+            <a href="{% url 'reports:create_dashboard' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+                <i class="fas fa-plus fa-sm text-white-50"></i> New Dashboard
+            </a>
+            <a href="{% url 'reports:dashboard' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Main Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Dashboards Grid -->
+    <div class="row">
+        {% for dashboard in dashboards %}
+        <div class="col-xl-4 col-lg-6 col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ dashboard.name }}</h6>
+                    {% if dashboard.is_public %}
+                    <span class="badge badge-success">Public</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ dashboard.description|truncatechars:120 }}</p>
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Reports
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ dashboard.reports.count }}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Refresh
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ dashboard.refresh_interval|divisibleby:60|yesno:"Every ," }}{{ dashboard.refresh_interval|divisibleby:60|yesno:dashboard.refresh_interval|divisibleby:3600|yesno:"hr,min" }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="small text-muted mb-3">
+                        <i class="fas fa-user mr-1"></i> Created by {{ dashboard.created_by.get_full_name }}
+                        <br>
+                        <i class="fas fa-calendar mr-1"></i> {{ dashboard.created_at|date:"M d, Y" }}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'reports:view_dashboard' dashboard.id %}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'reports:edit_dashboard' dashboard.id %}" class="btn btn-info">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'reports:delete_dashboard' dashboard.id %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-tachometer-alt fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No dashboards created yet</h4>
+                <p class="text-muted">Create your first dashboard to organize and view multiple reports together.</p>
+                <a href="{% url 'reports:create_dashboard' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus mr-2"></i>Create Dashboard
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

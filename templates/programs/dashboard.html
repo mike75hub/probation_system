@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'programs:program_create' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i>Create New Program
+        </a>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row">
+        <!-- Total Programs -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Programs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_programs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-list-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Programs -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Programs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_programs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-play-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Enrollments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Enrollments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_enrollments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Enrollments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Active Enrollments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_enrollments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Recent Programs -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Programs</h6>
+                    <a href="{% url 'programs:program_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_programs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Program Name</th>
+                                    <th>Type</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for program in recent_programs %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'programs:program_detail' program.pk %}" class="font-weight-bold">
+                                            {{ program.name }}
+                                        </a>
+                                        {% if program.description %}
+                                        <br><small class="text-muted">{{ program.description|truncatechars:50 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">{{ program.get_program_type_display }}</span>
+                                    </td>
+                                    <td>{{ program.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if program.status == 'active' %}
+                                        <span class="badge badge-success">Active</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary">{{ program.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'programs:program_detail' program.pk %}" class="btn btn-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'programs:program_update' program.pk %}" class="btn btn-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No programs found. <a href="{% url 'programs:program_create' %}">Create your first program</a>.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Programs by Type -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Programs by Type</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="programTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4 mb-4">
+            <!-- Completion Rate -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Average Completion Rate</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="gauge-chart mb-3">
+                        <canvas id="completionGauge" width="200" height="100"></canvas>
+                    </div>
+                    <h2 class="font-weight-bold text-primary">{{ avg_completion_rate|floatformat:1 }}%</h2>
+                    <p class="text-muted mb-0">Average program completion rate</p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'programs:program_create' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus text-primary mr-2"></i>Create New Program
+                        </a>
+                        <a href="{% url 'programs:enrollment_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users text-success mr-2"></i>Manage Enrollments
+                        </a>
+                        <a href="{% url 'programs:category_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-folder text-info mr-2"></i>Program Categories
+                        </a>
+                        <a href="{% url 'programs:program_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-list text-warning mr-2"></i>View All Programs
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Enrollments -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="font-weight-bold">{{ recent_enrollments }}</span>
+                        <small class="text-muted">new enrollments in last 30 days</small>
+                    </div>
+                    <div class="progress mb-4" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ recent_enrollments|default:0 }}%"></div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <i class="fas fa-chart-line fa-2x text-gray-300 mb-2"></i>
+                        <p class="small text-muted">Track program performance and enrollment trends</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Program Type Chart
+    var ctx = document.getElementById('programTypeChart').getContext('2d');
+    var programTypeChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for type in programs_by_type %}
+                '{{ type.program_type__name|default:"Other" }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Number of Programs',
+                data: [
+                    {% for type in programs_by_type %}
+                    {{ type.count }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(78, 115, 223, 0.8)',
+                    'rgba(54, 185, 204, 0.8)',
+                    'rgba(28, 200, 138, 0.8)',
+                    'rgba(246, 194, 62, 0.8)',
+                    'rgba(231, 74, 59, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(78, 115, 223, 1)',
+                    'rgba(54, 185, 204, 1)',
+                    'rgba(28, 200, 138, 1)',
+                    'rgba(246, 194, 62, 1)',
+                    'rgba(231, 74, 59, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    // Completion Gauge Chart
+    var gaugeCtx = document.getElementById('completionGauge').getContext('2d');
+    var completionRate = {{ avg_completion_rate|default:0 }};
+    
+    // Simple gauge implementation
+    var startAngle = Math.PI;
+    var endAngle = Math.PI * 2;
+    var currentAngle = startAngle + (endAngle - startAngle) * (completionRate / 100);
+    
+    // Draw gauge
+    gaugeCtx.beginPath();
+    gaugeCtx.arc(100, 100, 80, startAngle, endAngle);
+    gaugeCtx.lineWidth = 20;
+    gaugeCtx.strokeStyle = '#e3e6f0';
+    gaugeCtx.stroke();
+    
+    // Draw progress
+    gaugeCtx.beginPath();
+    gaugeCtx.arc(100, 100, 80, startAngle, currentAngle);
+    gaugeCtx.lineWidth = 20;
+    gaugeCtx.strokeStyle = completionRate >= 70 ? '#1cc88a' : 
+                           completionRate >= 50 ? '#f6c23e' : '#e74a3b';
+    gaugeCtx.stroke();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,454 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load dashboard_extras %}
+
+{% block title %}{{ dataset.name }} - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">{{ dataset.name }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'datasets:dataset_list' %}">Datasets</a></li>
+                    <li class="breadcrumb-item active">{{ dataset.name|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'datasets:dataset_update' dataset.pk %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-2"></i>Edit
+            </a>
+            <a href="{% url 'datasets:dataset_download' dataset.pk %}" class="btn btn-outline-success">
+                <i class="fas fa-download me-2"></i>Download
+            </a>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="fas fa-trash me-2"></i>Delete
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Dataset Info -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Dataset Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Type:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-info">{{ dataset.get_dataset_type_display }}</span>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-{{ dataset.get_status_color }}">
+                                        {{ dataset.get_status_display }}
+                                    </span>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Rows × Columns:</dt>
+                                <dd class="col-sm-8">{{ dataset.row_count }} × {{ dataset.column_count }}</dd>
+                                
+                                <dt class="col-sm-4">File Size:</dt>
+                                <dd class="col-sm-8">{{ dataset.get_file_size_display }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Uploaded:</dt>
+                                <dd class="col-sm-8">{{ dataset.upload_date|date:"F d, Y H:i" }}</dd>
+                                
+                                <dt class="col-sm-4">By:</dt>
+                                <dd class="col-sm-8">{{ dataset.uploaded_by.get_full_name|default:dataset.uploaded_by.username }}</dd>
+                                
+                                <dt class="col-sm-4">Last Modified:</dt>
+                                <dd class="col-sm-8">{{ dataset.last_modified|date:"F d, Y H:i" }}</dd>
+                                
+                                <dt class="col-sm-4">Format:</dt>
+                                <dd class="col-sm-8">{{ dataset.file_format|upper }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    {% if dataset.description %}
+                    <div class="mt-3">
+                        <h6>Description:</h6>
+                        <p class="text-muted">{{ dataset.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Data Quality Card -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Data Quality</h6>
+                    <form method="post" action="{% url 'datasets:dataset_analyze' dataset.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-sync me-1"></i>Re-analyze
+                        </button>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-4">
+                        <div class="col-md-6">
+                            <div class="display-4 fw-bold text-{% if dataset.data_quality_score > 80 %}success{% elif dataset.data_quality_score > 60 %}warning{% else %}danger{% endif %}">
+                                {{ dataset.data_quality_score|floatformat:1 }}%
+                            </div>
+                            <p class="text-muted">Overall Quality Score</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="display-4 fw-bold text-primary">{{ dataset.duplicate_rows }}</div>
+                            <p class="text-muted">Duplicate Rows</p>
+                        </div>
+                    </div>
+                    
+                    {% if dataset.missing_values_count %}
+                    <h6>Missing Values:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Column</th>
+                                    <th>Missing Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for column, count in dataset.missing_values_count.items %}
+                                {% if count > 0 %}
+                                <tr>
+                                    <td>{{ column }}</td>
+                                    <td>{{ count }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-{% if count|add:0 < dataset.row_count|multiply:0.05 %}success{% elif count|add:0 < dataset.row_count|multiply:0.1 %}warning{% else %}danger{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {% widthratio count dataset.row_count 100 %}%">
+                                            </div>
+                                        </div>
+                                        <small>{% widthratio count dataset.row_count 100 %}%</small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Data Preview Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-table me-2"></i>Data Preview</h6>
+                </div>
+                <div class="card-body">
+                    {% if preview_data %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    {% for column in preview_columns %}
+                                    <th>{{ column }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in preview_data %}
+                                <tr>
+                                    {% for column in preview_columns %}
+                                    <td>{{ row|get_item:column|default:"-" }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small">Showing first 5 rows</p>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                        <p>No preview data available</p>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#previewModal">
+                            <i class="fas fa-eye me-1"></i>Preview Data
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Actions & Metadata -->
+        <div class="col-lg-4">
+            <!-- Quick Actions Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'datasets:dataset_clean' dataset.pk %}" class="btn btn-warning">
+                            <i class="fas fa-broom me-2"></i>Clean & Process
+                        </a>
+                        
+                        <a href="{% url 'datasets:bulk_feature_mapping' dataset.pk %}" class="btn btn-info">
+                            <i class="fas fa-map me-2"></i>Create Feature Maps
+                        </a>
+                        
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#previewModal">
+                            <i class="fas fa-eye me-2"></i>Preview Data
+                        </button>
+                        
+                        <a href="{% url 'ml_models:train_model' %}?dataset={{ dataset.pk }}" class="btn btn-primary">
+                            <i class="fas fa-brain me-2"></i>Train ML Model
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-columns me-2"></i>Columns ({{ dataset.column_count }})</h6>
+                </div>
+                <div class="card-body">
+                    {% if dataset.column_names %}
+                    <div class="mb-3">
+                        <input type="text" class="form-control form-control-sm" 
+                               placeholder="Search columns..." id="columnSearch">
+                    </div>
+                    <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                        {% for column in dataset.column_names %}
+                        <div class="list-group-item list-group-item-action py-2 column-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="font-monospace small">{{ column }}</span>
+                                <span class="badge bg-secondary small">
+                                    {{ dataset.data_types|get_item:column|default:"text" }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No column information available</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Feature Maps Card -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Feature Maps</h6>
+                    <a href="{% url 'datasets:featuremap_create' dataset.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus"></i>
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if feature_maps %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Source</th>
+                                    <th>Mapped To</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature_map in feature_maps %}
+                                <tr>
+                                    <td class="small">{{ feature_map.source_column|truncatechars:15 }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ feature_map.mapped_feature }}</span>
+                                        {% if feature_map.is_target %}
+                                        <span class="badge bg-danger small">Target</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ feature_map.feature_type }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="#" class="btn btn-sm btn-outline-primary w-100">
+                        View All ({{ feature_maps|length }})
+                    </a>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-circle fa-2x text-warning mb-2"></i>
+                        <p class="text-muted">No feature maps defined</p>
+                        <a href="{% url 'datasets:bulk_feature_mapping' dataset.pk %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-magic me-1"></i>Auto-create
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the dataset <strong>"{{ dataset.name }}"</strong>?</p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This action cannot be undone. All associated feature maps will also be deleted.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'datasets:dataset_delete' dataset.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Dataset</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Data Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="previewForm">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="rowsToPreview" class="form-label">Rows to preview:</label>
+                            <input type="number" id="rowsToPreview" class="form-control" value="10" min="1" max="100">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="button" id="loadPreview" class="btn btn-primary">
+                                <i class="fas fa-sync me-1"></i>Load Preview
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div id="previewResult">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading preview data...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Column search
+    $('#columnSearch').on('keyup', function() {
+        var searchText = $(this).val().toLowerCase();
+        $('.column-item').each(function() {
+            var columnText = $(this).text().toLowerCase();
+            $(this).toggle(columnText.indexOf(searchText) > -1);
+        });
+    });
+    
+    // Load preview data
+    $('#loadPreview').click(function() {
+        var rows = $('#rowsToPreview').val();
+        var datasetId = {{ dataset.pk }};
+        
+        $('#previewResult').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading preview data...</p>
+            </div>
+        `);
+        
+        $.ajax({
+            url: '{% url "datasets:dataset_preview" dataset.pk %}',
+            type: 'POST',
+            data: {
+                'rows_to_preview': rows,
+                'include_header': true,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    var html = '<div class="table-responsive"><table class="table table-sm table-hover">';
+                    
+                    // Add header
+                    html += '<thead><tr>';
+                    response.columns.forEach(function(column) {
+                        html += '<th>' + column + '</th>';
+                    });
+                    html += '</tr></thead>';
+                    
+                    // Add data
+                    html += '<tbody>';
+                    response.data.forEach(function(row) {
+                        html += '<tr>';
+                        response.columns.forEach(function(column) {
+                            html += '<td>' + (row[column] || '-') + '</td>';
+                        });
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                    html += '<p class="text-muted small">Showing ' + response.row_count + ' rows</p>';
+                    
+                    $('#previewResult').html(html);
+                } else {
+                    $('#previewResult').html(`
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error loading preview: ${response.error}
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                $('#previewResult').html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading preview data
+                    </div>
+                `);
+            }
+        });
+    });
+    
+    // Load initial preview when modal opens
+    $('#previewModal').on('shown.bs.modal', function() {
+        $('#loadPreview').click();
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">{{ title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'offenders:offender_list' %}">Offenders</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'offenders:detail' offender.pk %}">{{ offender.get_full_name }}</a></li>
+                    <li class="breadcrumb-item active">Monitoring</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'monitoring:quick_checkin' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Quick Check-in
+            </a>
+            <a href="{% url 'monitoring:drugtest_create' %}" class="btn btn-info">
+                <i class="fas fa-vial me-2"></i>Drug Test
+            </a>
+            <a href="{% url 'monitoring:gps_create' %}" class="btn btn-warning">
+                <i class="fas fa-satellite-dish me-2"></i>Assign GPS
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Monitoring Overview -->
+        <div class="col-lg-8">
+            <!-- Compliance Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Compliance Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-4">
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold text-primary">{{ completed_checkins }}</div>
+                            <p class="text-muted">Completed Check-ins</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold text-danger">{{ missed_checkins }}</div>
+                            <p class="text-muted">Missed Check-ins</p>
+                        </div>
+                        <div class="col-md-4">
+                            {% with total=completed_checkins|add:missed_checkins %}
+                            {% if total > 0 %}
+                            <div class="display-4 fw-bold text-success">
+                                {{ completed_checkins|floatformat:0 }}/{{ total }}
+                            </div>
+                            <p class="text-muted">Compliance Rate</p>
+                            {% else %}
+                            <div class="display-4 fw-bold text-secondary">-</div>
+                            <p class="text-muted">No Data</p>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Check-ins -->
+                    <h6 class="mb-3">Recent Check-ins:</h6>
+                    {% if checkins %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Purpose</th>
+                                    <th>Status</th>
+                                    <th>Officer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for checkin in checkins %}
+                                <tr>
+                                    <td class="small">{{ checkin.scheduled_date|date:"M d" }}</td>
+                                    <td class="small">{{ checkin.scheduled_date|time:"H:i" }}</td>
+                                    <td class="small">{{ checkin.purpose|truncatechars:30 }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ checkin.get_status_color }} small">
+                                            {{ checkin.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="small">{{ checkin.probation_officer.first_name }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'monitoring:checkin_list' %}?offender={{ offender.get_full_name }}" 
+                       class="btn btn-sm btn-outline-primary w-100">
+                        View All Check-ins
+                    </a>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-calendar fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No check-ins recorded</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Drug Test History -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-prescription-bottle-alt me-2"></i>Drug Test History</h6>
+                </div>
+                <div class="card-body">
+                    {% if drug_tests %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Test Type</th>
+                                    <th>Result</th>
+                                    <th>Substances</th>
+                                    <th>Conducted By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for test in drug_tests %}
+                                <tr>
+                                    <td class="small">{{ test.test_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-info small">{{ test.get_test_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if test.result == 'positive' %}
+                                        <span class="badge bg-danger small">Positive</span>
+                                        {% elif test.result == 'negative' %}
+                                        <span class="badge bg-success small">Negative</span>
+                                        {% else %}
+                                        <span class="badge bg-warning small">Inconclusive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if test.substances_detected %}
+                                        <div class="small">
+                                            {% for substance in test.substances_detected %}
+                                            <span class="badge bg-danger small mb-1">{{ substance }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ test.conducted_by.get_full_name }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-vial fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No drug tests recorded</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Recent Alerts</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_alerts %}
+                    <div class="list-group list-group-flush">
+                        {% for alert in recent_alerts %}
+                        <a href="{% url 'monitoring:alert_detail' alert.pk %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ alert.title }}</h6>
+                                    <p class="mb-1 small">{{ alert.description|truncatechars:80 }}</p>
+                                </div>
+                                <div>
+                                    <span class="badge bg-{{ alert.get_priority_color }}">
+                                        {{ alert.get_priority_display }}
+                                    </span>
+                                    <span class="badge bg-{{ alert.get_status_color }} ms-1">
+                                        {{ alert.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="small text-muted">
+                                <i class="fas fa-clock me-1"></i>{{ alert.alert_time|timesince }} ago
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-bell-slash fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No alerts for this offender</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Side Information -->
+        <div class="col-lg-4">
+            <!-- Offender Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Offender Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if offender.user.profile_picture %}
+                        <img src="{{ offender.user.profile_picture.url }}" alt="Profile" 
+                             class="rounded-circle img-thumbnail" style="width: 100px; height: 100px;">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+                             style="width: 100px; height: 100px; margin: 0 auto;">
+                            <i class="fas fa-user fa-3x text-white"></i>
+                        </div>
+                        {% endif %}
+                        <h5 class="mt-3">{{ offender.get_full_name }}</h5>
+                        <p class="text-muted">{{ offender.offender_id }}</p>
+                    </div>
+                    
+                    <dl class="row small">
+                        <dt class="col-sm-5">Risk Level:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge bg-{{ offender.get_risk_color }}">
+                                {{ offender.get_risk_level_display }}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Age:</dt>
+                        <dd class="col-sm-7">{{ offender.age }} years</dd>
+                        
+                        <dt class="col-sm-5">Contact:</dt>
+                        <dd class="col-sm-7">{{ offender.user.phone|default:"-" }}</dd>
+                        
+                        <dt class="col-sm-5">Address:</dt>
+                        <dd class="col-sm-7">{{ offender.address|truncatechars:30 }}</dd>
+                        
+                        <dt class="col-sm-5">Active Cases:</dt>
+                        <dd class="col-sm-7">{{ offender.cases.filter.status='active'|length }}</dd>
+                    </dl>
+                    
+                    <a href="{% url 'offenders:detail' offender.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="fas fa-external-link-alt me-1"></i>View Full Profile
+                    </a>
+                </div>
+            </div>
+
+            <!-- GPS Monitoring Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-satellite-dish me-2"></i>GPS Monitoring</h6>
+                </div>
+                <div class="card-body">
+                    {% if gps_monitoring %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">{{ gps_monitoring.device_id }}</span>
+                            <span class="badge bg-{{ gps_monitoring.get_device_status_color }}">
+                                {{ gps_monitoring.get_device_status_display }}
+                            </span>
+                        </div>
+                        <div class="small text-muted">{{ gps_monitoring.get_device_type_display }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="small text-muted">Issued</div>
+                            <div class="fw-bold">{{ gps_monitoring.issued_date|date:"M d" }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Expires</div>
+                            <div class="fw-bold {% if gps_monitoring.monitoring_end_date < today %}text-danger{% endif %}">
+                                {{ gps_monitoring.monitoring_end_date|date:"M d" }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="small text-muted">Battery Level</div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-{% if gps_monitoring.battery_level > 50 %}success{% elif gps_monitoring.battery_level > 20 %}warning{% else %}danger{% endif %}" 
+                                 style="width: {{ gps_monitoring.battery_level }}%">
+                            </div>
+                        </div>
+                        <div class="small text-center">{{ gps_monitoring.battery_level }}%</div>
+                    </div>
+                    
+                    <a href="{% url 'monitoring:gps_detail' gps_monitoring.pk %}" class="btn btn-sm btn-outline-warning w-100">
+                        <i class="fas fa-map-marked-alt me-1"></i>View Live Location
+                    </a>
+                    
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-satellite-dish fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No GPS device assigned</p>
+                        <a href="{% url 'monitoring:gps_create' %}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-plus me-1"></i>Assign GPS
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Employment Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-briefcase me-2"></i>Employment Status</h6>
+                </div>
+                <div class="card-body">
+                    {% if current_employment %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">{{ current_employment.employer_name }}</span>
+                            <span class="badge bg-success">Verified</span>
+                        </div>
+                        <div class="small text-muted">{{ current_employment.position }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="small text-muted">Start Date</div>
+                            <div class="fw-bold">{{ current_employment.start_date|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">End Date</div>
+                            <div class="fw-bold">{{ current_employment.end_date|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="small text-muted">Salary</div>
+                        <div class="fw-bold">KSh {{ current_employment.salary|floatformat:0 }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="small text-muted">Supervisor</div>
+                        <div>{{ current_employment.supervisor_name }}</div>
+                        <div class="small text-muted">{{ current_employment.supervisor_contact }}</div>
+                    </div>
+                    
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-briefcase fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No verified employment</p>
+                        <a href="{% url 'monitoring:employment_create' %}" class="btn btn-sm btn-success">
+                            <i class="fas fa-plus me-1"></i>Add Employment
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Drug Tests - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Drug Tests</h1>
+            <p class="text-muted">Record and monitor offender drug test results</p>
+        </div>
+        <div>
+            <a href="{% url 'monitoring:drugtest_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Record Drug Test
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Tests
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_tests }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-vial fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Negative Results
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ negative_tests }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Positive Results
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ positive_tests }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Positive Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ positive_rate|floatformat:1 }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-pie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="result" class="form-label">Test Result</label>
+                    <select name="result" id="result" class="form-select">
+                        <option value="">All Results</option>
+                        <option value="positive" {% if request.GET.result == 'positive' %}selected{% endif %}>Positive</option>
+                        <option value="negative" {% if request.GET.result == 'negative' %}selected{% endif %}>Negative</option>
+                        <option value="inconclusive" {% if request.GET.result == 'inconclusive' %}selected{% endif %}>Inconclusive</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="offender" class="form-label">Offender</label>
+                    <input type="text" name="offender" id="offender" class="form-control" 
+                           placeholder="Search offender" value="{{ request.GET.offender }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" 
+                           value="{{ request.GET.date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" 
+                           value="{{ request.GET.date_to }}">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Drug Tests Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Drug Test Records</h6>
+            <span class="badge bg-primary rounded-pill">{{ drug_tests|length }} tests</span>
+        </div>
+        <div class="card-body">
+            {% if drug_tests %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Offender</th>
+                            <th>Test Type</th>
+                            <th>Result</th>
+                            <th>Substances Detected</th>
+                            <th>Conducted By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in drug_tests %}
+                        <tr>
+                            <td>
+                                <div class="small">{{ test.test_date|date:"M d, Y" }}</div>
+                                <div class="small text-muted">{{ test.test_date|time:"H:i" }}</div>
+                            </td>
+                            <td>
+                                <a href="{% url 'monitoring:offender_summary' test.offender.pk %}" class="fw-bold">
+                                    {{ test.offender.get_full_name }}
+                                </a>
+                                <div class="small text-muted">{{ test.offender.offender_id }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ test.get_test_type_display }}</span>
+                            </td>
+                            <td>
+                                {% if test.result == 'positive' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-exclamation-circle me-1"></i>Positive
+                                </span>
+                                {% elif test.result == 'negative' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Negative
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-question-circle me-1"></i>Inconclusive
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if test.substances_detected %}
+                                <div class="small">
+                                    {% for substance in test.substances_detected|slice:":2" %}
+                                    <span class="badge bg-danger small mb-1">{{ substance }}</span>
+                                    {% endfor %}
+                                    {% if test.substances_detected|length > 2 %}
+                                    <span class="badge bg-secondary small">+{{ test.substances_detected|length|add:"-2" }}</span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                {{ test.conducted_by.get_full_name }}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="#" class="btn btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'monitoring:drugtest_update' test.pk %}" 
+                                       class="btn btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-success" title="Report">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-vial fa-4x text-muted mb-3"></i>
+                <h5>No drug tests found</h5>
+                <p class="text-muted">Record your first drug test</p>
+                <a href="{% url 'monitoring:drugtest_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Record Drug Test
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Set default date filter to last 30 days
+    if (!$('#date_from').val()) {
+        var date = new Date();
+        date.setDate(date.getDate() - 30);
+        $('#date_from').val(date.toISOString().split('T')[0]);
+    }
+    if (!$('#date_to').val()) {
+        $('#date_to').val(new Date().toISOString().split('T')[0]);
+    }
+});
+</script>
+{% endblock %}

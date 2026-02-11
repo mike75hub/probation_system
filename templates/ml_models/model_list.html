@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ML Models - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Machine Learning Models</h1>
+            <p class="text-muted">Manage and deploy ML models for predictions</p>
+        </div>
+        <div>
+            <a href="{% url 'ml_models:train_model' %}" class="btn btn-primary">
+                <i class="fas fa-brain me-2"></i>Train New Model
+            </a>
+            <a href="{% url 'ml_models:model_create' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-plus me-2"></i>Add Model
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Models
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_models }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-robot fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Deployed Models
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ deployed_models }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-rocket fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Accuracy
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ avg_accuracy|floatformat:1 }}%
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Active Models
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_models }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bolt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Model Type</label>
+                    <select name="type" id="type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="classification" {% if request.GET.type == 'classification' %}selected{% endif %}>Classification</option>
+                        <option value="regression" {% if request.GET.type == 'regression' %}selected{% endif %}>Regression</option>
+                        <option value="clustering" {% if request.GET.type == 'clustering' %}selected{% endif %}>Clustering</option>
+                        <option value="recommender" {% if request.GET.type == 'recommender' %}selected{% endif %}>Recommender</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="algorithm" class="form-label">Algorithm</label>
+                    <select name="algorithm" id="algorithm" class="form-select">
+                        <option value="">All Algorithms</option>
+                        <option value="random_forest" {% if request.GET.algorithm == 'random_forest' %}selected{% endif %}>Random Forest</option>
+                        <option value="logistic_regression" {% if request.GET.algorithm == 'logistic_regression' %}selected{% endif %}>Logistic Regression</option>
+                        <option value="xgboost" {% if request.GET.algorithm == 'xgboost' %}selected{% endif %}>XGBoost</option>
+                        <option value="decision_tree" {% if request.GET.algorithm == 'decision_tree' %}selected{% endif %}>Decision Tree</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="trained" {% if request.GET.status == 'trained' %}selected{% endif %}>Trained</option>
+                        <option value="deployed" {% if request.GET.status == 'deployed' %}selected{% endif %}>Deployed</option>
+                        <option value="training" {% if request.GET.status == 'training' %}selected{% endif %}>Training</option>
+                        <option value="error" {% if request.GET.status == 'error' %}selected{% endif %}>Error</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="show_inactive" id="show_inactive" 
+                               {% if request.GET.show_inactive %}checked{% endif %}>
+                        <label class="form-check-label" for="show_inactive">
+                            Show Inactive Models
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Search by name, description, or purpose" value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Models Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All Models</h6>
+            <span class="badge bg-primary rounded-pill">{{ models|length }} models</span>
+        </div>
+        <div class="card-body">
+            {% if models %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Algorithm</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Accuracy</th>
+                            <th>Purpose</th>
+                            <th>Last Trained</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in models %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'ml_models:model_detail' model.pk %}" class="fw-bold">
+                                    {{ model.name }}
+                                </a>
+                                <div class="small text-muted">v{{ model.version }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ model.get_algorithm_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ model.get_model_type_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ model.get_status_color }}">
+                                    {{ model.get_status_display }}
+                                </span>
+                                {% if model.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if model.accuracy %}
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-{% if model.accuracy > 0.8 %}success{% elif model.accuracy > 0.6 %}warning{% else %}danger{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {% widthratio model.accuracy 1 100 %}%">
+                                    </div>
+                                </div>
+                                <small>{{ model.accuracy|floatformat:2 }}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="small">{{ model.purpose|truncatechars:40 }}</div>
+                            </td>
+                            <td>
+                                <div class="small">{{ model.last_trained|date:"M d, Y" }}</div>
+                                <div class="small text-muted">
+                                    {% if model.trained_by %}
+                                    by {{ model.trained_by.get_full_name|default:model.trained_by.username }}
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'ml_models:model_detail' model.pk %}" 
+                                       class="btn btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'ml_models:model_update' model.pk %}" 
+                                       class="btn btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if model.status == 'deployed' %}
+                                    <a href="{% url 'ml_models:make_prediction' %}?model={{ model.pk }}" 
+                                       class="btn btn-outline-success" title="Predict">
+                                        <i class="fas fa-bolt"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-robot fa-4x text-muted mb-3"></i>
+                <h5>No ML models found</h5>
+                <p class="text-muted">Train your first model to get started</p>
+                <a href="{% url 'ml_models:train_model' %}" class="btn btn-primary">
+                    <i class="fas fa-brain me-2"></i>Train Model
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Training Jobs -->
+    {% if recent_jobs %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Training Jobs</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Model</th>
+                            <th>Status</th>
+                            <th>Started</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in recent_jobs %}
+                        <tr>
+                            <td class="small">{{ job.job_id }}</td>
+                            <td>
+                                {% if job.ml_model %}
+                                <a href="{% url 'ml_models:model_detail' job.ml_model.pk %}" class="small">
+                                    {{ job.ml_model.name }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted small">No model</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ job.get_status_color }} small">
+                                    {{ job.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="small">{{ job.created_at|date:"M d, H:i" }}</td>
+                            <td class="small">
+                                {% if job.training_time_seconds %}
+                                {{ job.training_time_seconds|floatformat:0 }}s
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Auto-submit filters on change
+    $('#type, #algorithm, #status').change(function() {
+        $(this).closest('form').submit();
+    });
+});
+</script>
+{% endblock %}

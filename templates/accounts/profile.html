@@ -1,0 +1,487 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - Probation Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-container {
+        padding: 20px 0;
+    }
+    
+    .profile-card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    .profile-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .profile-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 5px solid white;
+        object-fit: cover;
+        margin-bottom: 20px;
+    }
+    
+    .avatar-placeholder {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        border: 5px solid white;
+    }
+    
+    .avatar-placeholder i {
+        font-size: 4rem;
+        color: white;
+    }
+    
+    .profile-body {
+        padding: 30px;
+        background: white;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+        position: relative;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 50px;
+        height: 2px;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .info-item i {
+        width: 30px;
+        color: #3498db;
+        font-size: 1.2rem;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #2c3e50;
+        min-width: 120px;
+    }
+    
+    .info-value {
+        color: #555;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .stat-item {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+    }
+    
+    .btn-change-password {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-change-password:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+    }
+    
+    .activity-timeline {
+        margin-top: 30px;
+    }
+    
+    .timeline-item {
+        display: flex;
+        margin-bottom: 20px;
+        padding-left: 20px;
+        position: relative;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3498db;
+    }
+    
+    .timeline-content {
+        padding-left: 20px;
+    }
+    
+    .timeline-time {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="row">
+        <!-- Left Column: Profile Info -->
+        <div class="col-md-4 mb-4">
+            <div class="profile-card">
+                <div class="profile-header">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-avatar">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <h3 class="mb-2">{{ user.get_full_name|default:user.username }}</h3>
+                    <span class="badge badge-role badge-{{ user.role }}" style="font-size: 1rem;">
+                        {{ user.get_role_display }}
+                    </span>
+                    
+                    <div class="mt-3">
+                        <small style="opacity: 0.9;">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            Member since {{ user.date_joined|date:"F d, Y" }}
+                        </small>
+                    </div>
+                    
+                    <div class="mt-2">
+                        <small style="opacity: 0.9;">
+                            <i class="fas fa-clock me-1"></i>
+                            Last login: {{ user.last_login|date:"M d, Y h:i A"|default:"Never" }}
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="profile-body">
+                    <h5 class="section-title"><i class="fas fa-info-circle me-2"></i>Account Information</h5>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-at"></i>
+                        <span class="info-label">Username:</span>
+                        <span class="info-value">{{ user.username }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{{ user.email|default:"Not set" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <span class="info-label">Phone:</span>
+                        <span class="info-value">{{ user.phone|default:"Not set" }}</span>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-user-tag"></i>
+                        <span class="info-label">Account Status:</span>
+                        <span class="info-value">
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if user.is_staff %}
+                    <div class="info-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span class="info-label">Staff Status:</span>
+                        <span class="info-value">
+                            <span class="badge bg-info">Staff Member</span>
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.is_superuser %}
+                    <div class="info-item">
+                        <i class="fas fa-crown"></i>
+                        <span class="info-label">Superuser:</span>
+                        <span class="info-value">
+                            <span class="badge bg-warning">Superuser</span>
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Stats Grid -->
+                    <div class="stats-grid mt-4">
+                        <div class="stat-item">
+                            <div class="stat-value">
+                                {% if user.role == 'officer' %}12{% elif user.role == 'offender' %}65{% else %}24{% endif %}
+                            </div>
+                            <div class="stat-label">
+                                {% if user.role == 'officer' %}Active Cases
+                                {% elif user.role == 'offender' %}Progress %
+                                {% else %}Total Users{% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-value">
+                                {% if user.role == 'officer' %}92%{% elif user.role == 'offender' %}88%{% else %}15%{% endif %}
+                            </div>
+                            <div class="stat-label">
+                                {% if user.role == 'officer' %}Compliance
+                                {% elif user.role == 'offender' %}Score
+                                {% else %}Risk Reduction{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column: Edit Form -->
+        <div class="col-md-8">
+            <div class="profile-card">
+                <div class="profile-body">
+                    <h5 class="section-title"><i class="fas fa-edit me-2"></i>Edit Profile Information</h5>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" class="form-control" name="first_name" 
+                                       value="{{ user.first_name|default:'' }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" name="last_name" 
+                                       value="{{ user.last_name|default:'' }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" name="email" 
+                                       value="{{ user.email|default:'' }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" name="phone" 
+                                       value="{{ user.phone|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Profile Picture</label>
+                            <input type="file" class="form-control" name="profile_picture" accept="image/*">
+                            <small class="form-text text-muted">Upload a profile picture (JPG, PNG, max 5MB)</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="submit" class="btn-save">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            
+                            <a href="{% url 'accounts:change_password' %}" class="btn-change-password">
+                                <i class="fas fa-key me-2"></i>Change Password
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <!-- Recent Activity -->
+                    <div class="activity-timeline mt-5">
+                        <h5 class="section-title"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Profile Viewed</h6>
+                                <p>You viewed your profile details</p>
+                                <div class="timeline-time">Just now</div>
+                            </div>
+                        </div>
+                        
+                        {% if user.last_login %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Last Login</h6>
+                                <p>Successfully logged into the system</p>
+                                <div class="timeline-time">{{ user.last_login|date:"M d, Y h:i A" }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Account Created</h6>
+                                <p>Your account was successfully created</p>
+                                <div class="timeline-time">{{ user.date_joined|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const firstName = document.querySelector('input[name="first_name"]').value.trim();
+        const lastName = document.querySelector('input[name="last_name"]').value.trim();
+        const email = document.querySelector('input[name="email"]').value.trim();
+        
+        if (!firstName || !lastName || !email) {
+            e.preventDefault();
+            alert('Please fill in all required fields (marked with *).');
+            return false;
+        }
+        
+        // Email validation
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(email)) {
+            e.preventDefault();
+            alert('Please enter a valid email address.');
+            return false;
+        }
+        
+        // Show loading state
+        const submitBtn = document.querySelector('.btn-save');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        submitBtn.disabled = true;
+        
+        // Re-enable button after 3 seconds if form doesn't submit
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 3000);
+    });
+    
+    // File upload preview
+    const fileInput = document.querySelector('input[type="file"]');
+    const avatarPlaceholder = document.querySelector('.avatar-placeholder');
+    const avatarImage = document.querySelector('.profile-avatar');
+    
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // If there's an existing image, update it
+                if (avatarImage) {
+                    avatarImage.src = e.target.result;
+                } else {
+                    // Create new image element
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'profile-avatar';
+                    img.alt = 'Profile Picture';
+                    
+                    // Replace placeholder with image
+                    avatarPlaceholder.parentNode.replaceChild(img, avatarPlaceholder);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+{% endblock %}

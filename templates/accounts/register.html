@@ -1,0 +1,647 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register - Probation Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .register-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+    }
+    
+    .register-card {
+        max-width: 800px;
+        width: 100%;
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+    }
+    
+    .register-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+        padding: 40px;
+        text-align: center;
+    }
+    
+    .register-header i {
+        font-size: 3.5rem;
+        margin-bottom: 20px;
+    }
+    
+    .register-body {
+        padding: 40px;
+        background: white;
+    }
+    
+    .form-section {
+        margin-bottom: 30px;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+        position: relative;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 50px;
+        height: 2px;
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+    
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    
+    .form-floating label {
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 10px;
+        padding: 15px;
+        border: 2px solid #e0e0e0;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .password-strength {
+        height: 5px;
+        background: #e0e0e0;
+        border-radius: 2px;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+    
+    .strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+    
+    .strength-weak { background: #e74c3c; }
+    .strength-fair { background: #f39c12; }
+    .strength-good { background: #3498db; }
+    .strength-strong { background: #27ae60; }
+    
+    .password-requirements {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+    }
+    
+    .requirement {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    .requirement i {
+        margin-right: 8px;
+        font-size: 0.8rem;
+    }
+    
+    .requirement.met { color: #27ae60; }
+    .requirement.unmet { color: #95a5a6; }
+    
+    .role-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+    
+    .role-option {
+        text-align: center;
+        padding: 20px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .role-option:hover {
+        border-color: #3498db;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+    }
+    
+    .role-option.selected {
+        border-color: #3498db;
+        background: linear-gradient(135deg, #3498db10 0%, #2980b910 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+    }
+    
+    .role-option i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+    
+    .role-admin i { color: #e74c3c; }
+    .role-officer i { color: #3498db; }
+    .role-offender i { color: #27ae60; }
+    .role-judiciary i { color: #9b59b6; }
+    .role-ngo i { color: #f39c12; }
+    
+    .btn-register {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        width: 100%;
+        font-size: 1.1rem;
+    }
+    
+    .btn-register:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 20px;
+        color: #666;
+    }
+    
+    .login-link a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .login-link a:hover {
+        color: #2980b9;
+        text-decoration: underline;
+    }
+    
+    .terms-check {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .register-card {
+            margin: 0 15px;
+        }
+        
+        .register-header, .register-body {
+            padding: 25px;
+        }
+        
+        .role-selector {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .role-selector {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <i class="fas fa-user-plus"></i>
+            <h2 class="mb-3">Create Your Account</h2>
+            <p class="mb-0" style="opacity: 0.9;">Join the Probation Management System</p>
+        </div>
+        
+        <div class="register-body">
+            <form method="post" id="registerForm">
+                {% csrf_token %}
+                
+                <!-- Error Messages -->
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Please correct the errors below:
+                    <ul class="mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field|title }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+                
+                <!-- Personal Information Section -->
+                <div class="form-section">
+                    <h5 class="section-title"><i class="fas fa-user me-2"></i>Personal Information</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       placeholder="First Name" value="{{ form.first_name.value|default:'' }}" required>
+                                <label for="first_name"><i class="fas fa-user me-2"></i>First Name</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       placeholder="Last Name" value="{{ form.last_name.value|default:'' }}" required>
+                                <label for="last_name"><i class="fas fa-user me-2"></i>Last Name</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="Email Address" value="{{ form.email.value|default:'' }}" required>
+                                <label for="email"><i class="fas fa-envelope me-2"></i>Email Address</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       placeholder="Phone Number" value="{{ form.phone.value|default:'' }}">
+                                <label for="phone"><i class="fas fa-phone me-2"></i>Phone Number</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Account Information Section -->
+                <div class="form-section">
+                    <h5 class="section-title"><i class="fas fa-key me-2"></i>Account Information</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       placeholder="Username" value="{{ form.username.value|default:'' }}" required
+                                       pattern="[A-Za-z0-9_]+" title="Only letters, numbers, and underscores are allowed">
+                                <label for="username"><i class="fas fa-at me-2"></i>Username</label>
+                                <small class="form-text text-muted">Only letters, numbers, and underscores</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="" disabled selected>Select your role</option>
+                                    <option value="admin">System Administrator</option>
+                                    <option value="officer">Probation Officer</option>
+                                    <option value="offender">Offender</option>
+                                    <option value="judiciary">Judiciary Staff</option>
+                                    <option value="ngo">NGO Staff</option>
+                                </select>
+                                <label for="role"><i class="fas fa-user-tag me-2"></i>User Role</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Role Visual Selector -->
+                    <div class="role-selector mb-4">
+                        <div class="role-option role-admin" data-role="admin">
+                            <i class="fas fa-crown"></i>
+                            <div class="role-name">Admin</div>
+                            <small class="text-muted">System Management</small>
+                        </div>
+                        
+                        <div class="role-option role-officer" data-role="officer">
+                            <i class="fas fa-user-shield"></i>
+                            <div class="role-name">Officer</div>
+                            <small class="text-muted">Case Management</small>
+                        </div>
+                        
+                        <div class="role-option role-offender" data-role="offender">
+                            <i class="fas fa-user"></i>
+                            <div class="role-name">Offender</div>
+                            <small class="text-muted">Rehabilitation</small>
+                        </div>
+                        
+                        <div class="role-option role-judiciary" data-role="judiciary">
+                            <i class="fas fa-balance-scale"></i>
+                            <div class="role-name">Judiciary</div>
+                            <small class="text-muted">Legal Oversight</small>
+                        </div>
+                        
+                        <div class="role-option role-ngo" data-role="ngo">
+                            <i class="fas fa-hands-helping"></i>
+                            <div class="role-name">NGO Staff</div>
+                            <small class="text-muted">Support Services</small>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="selectedRole" name="role" value="">
+                </div>
+                
+                <!-- Password Section -->
+                <div class="form-section">
+                    <h5 class="section-title"><i class="fas fa-lock me-2"></i>Security</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="password" class="form-control" id="password1" name="password1" 
+                                       placeholder="Password" required onkeyup="checkPasswordStrength()">
+                                <label for="password1"><i class="fas fa-lock me-2"></i>Password</label>
+                                <div class="password-strength">
+                                    <div class="strength-bar" id="passwordStrength"></div>
+                                </div>
+                                <div class="password-requirements" id="passwordRequirements">
+                                    <div class="requirement unmet" id="reqLength">
+                                        <i class="fas fa-circle"></i> At least 8 characters
+                                    </div>
+                                    <div class="requirement unmet" id="reqUpper">
+                                        <i class="fas fa-circle"></i> One uppercase letter
+                                    </div>
+                                    <div class="requirement unmet" id="reqLower">
+                                        <i class="fas fa-circle"></i> One lowercase letter
+                                    </div>
+                                    <div class="requirement unmet" id="reqNumber">
+                                        <i class="fas fa-circle"></i> One number
+                                    </div>
+                                    <div class="requirement unmet" id="reqSpecial">
+                                        <i class="fas fa-circle"></i> One special character
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="password" class="form-control" id="password2" name="password2" 
+                                       placeholder="Confirm Password" required onkeyup="checkPasswordMatch()">
+                                <label for="password2"><i class="fas fa-lock me-2"></i>Confirm Password</label>
+                                <div class="mt-2" id="passwordMatch">
+                                    <!-- Password match indicator will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Terms and Conditions -->
+                <div class="terms-check">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                        <label class="form-check-label" for="terms">
+                            I agree to the <a href="#" class="text-primary">Terms of Service</a> and 
+                            <a href="#" class="text-primary">Privacy Policy</a>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="consent" name="consent" required>
+                        <label class="form-check-label" for="consent">
+                            I consent to the collection and processing of my personal data
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="mt-4">
+                    <button type="submit" class="btn-register" id="submitBtn">
+                        <i class="fas fa-user-plus me-2"></i>Create Account
+                    </button>
+                </div>
+                
+                <!-- Login Link -->
+                <div class="login-link">
+                    Already have an account? 
+                    <a href="{% url 'accounts:login' %}">Login here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Role selector functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleOptions = document.querySelectorAll('.role-option');
+        const roleSelect = document.getElementById('role');
+        const hiddenRoleInput = document.getElementById('selectedRole');
+        
+        roleOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove selected class from all options
+                roleOptions.forEach(opt => opt.classList.remove('selected'));
+                
+                // Add selected class to clicked option
+                this.classList.add('selected');
+                
+                // Get the role value
+                const role = this.getAttribute('data-role');
+                
+                // Update both select and hidden input
+                roleSelect.value = role;
+                hiddenRoleInput.value = role;
+                
+                // Trigger change event
+                roleSelect.dispatchEvent(new Event('change'));
+            });
+        });
+        
+        // Initialize role from select if already selected
+        if (roleSelect.value) {
+            const selectedOption = document.querySelector(`.role-option[data-role="${roleSelect.value}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+                hiddenRoleInput.value = roleSelect.value;
+            }
+        }
+    });
+    
+    // Password strength checker
+    function checkPasswordStrength() {
+        const password = document.getElementById('password1').value;
+        const strengthBar = document.getElementById('passwordStrength');
+        const requirements = {
+            length: document.getElementById('reqLength'),
+            upper: document.getElementById('reqUpper'),
+            lower: document.getElementById('reqLower'),
+            number: document.getElementById('reqNumber'),
+            special: document.getElementById('reqSpecial')
+        };
+        
+        let strength = 0;
+        let totalChecks = 5;
+        let passedChecks = 0;
+        
+        // Check length
+        if (password.length >= 8) {
+            requirements.length.classList.remove('unmet');
+            requirements.length.classList.add('met');
+            requirements.length.innerHTML = '<i class="fas fa-check-circle"></i> At least 8 characters';
+            strength += 20;
+            passedChecks++;
+        } else {
+            requirements.length.classList.remove('met');
+            requirements.length.classList.add('unmet');
+            requirements.length.innerHTML = '<i class="fas fa-circle"></i> At least 8 characters';
+        }
+        
+        // Check uppercase
+        if (/[A-Z]/.test(password)) {
+            requirements.upper.classList.remove('unmet');
+            requirements.upper.classList.add('met');
+            requirements.upper.innerHTML = '<i class="fas fa-check-circle"></i> One uppercase letter';
+            strength += 20;
+            passedChecks++;
+        } else {
+            requirements.upper.classList.remove('met');
+            requirements.upper.classList.add('unmet');
+            requirements.upper.innerHTML = '<i class="fas fa-circle"></i> One uppercase letter';
+        }
+        
+        // Check lowercase
+        if (/[a-z]/.test(password)) {
+            requirements.lower.classList.remove('unmet');
+            requirements.lower.classList.add('met');
+            requirements.lower.innerHTML = '<i class="fas fa-check-circle"></i> One lowercase letter';
+            strength += 20;
+            passedChecks++;
+        } else {
+            requirements.lower.classList.remove('met');
+            requirements.lower.classList.add('unmet');
+            requirements.lower.innerHTML = '<i class="fas fa-circle"></i> One lowercase letter';
+        }
+        
+        // Check number
+        if (/[0-9]/.test(password)) {
+            requirements.number.classList.remove('unmet');
+            requirements.number.classList.add('met');
+            requirements.number.innerHTML = '<i class="fas fa-check-circle"></i> One number';
+            strength += 20;
+            passedChecks++;
+        } else {
+            requirements.number.classList.remove('met');
+            requirements.number.classList.add('unmet');
+            requirements.number.innerHTML = '<i class="fas fa-circle"></i> One number';
+        }
+        
+        // Check special character
+        if (/[^A-Za-z0-9]/.test(password)) {
+            requirements.special.classList.remove('unmet');
+            requirements.special.classList.add('met');
+            requirements.special.innerHTML = '<i class="fas fa-check-circle"></i> One special character';
+            strength += 20;
+            passedChecks++;
+        } else {
+            requirements.special.classList.remove('met');
+            requirements.special.classList.add('unmet');
+            requirements.special.innerHTML = '<i class="fas fa-circle"></i> One special character';
+        }
+        
+        // Update strength bar
+        strengthBar.style.width = strength + '%';
+        
+        // Update strength bar color
+        if (passedChecks <= 1) {
+            strengthBar.className = 'strength-bar strength-weak';
+        } else if (passedChecks <= 2) {
+            strengthBar.className = 'strength-bar strength-fair';
+        } else if (passedChecks <= 3) {
+            strengthBar.className = 'strength-bar strength-good';
+        } else {
+            strengthBar.className = 'strength-bar strength-strong';
+        }
+        
+        // Check password match if second field is filled
+        if (document.getElementById('password2').value) {
+            checkPasswordMatch();
+        }
+    }
+    
+    // Password match checker
+    function checkPasswordMatch() {
+        const password1 = document.getElementById('password1').value;
+        const password2 = document.getElementById('password2').value;
+        const matchIndicator = document.getElementById('passwordMatch');
+        
+        if (password1 && password2) {
+            if (password1 === password2) {
+                matchIndicator.innerHTML = '<div class="alert alert-success p-2 mb-0"><i class="fas fa-check-circle me-2"></i>Passwords match</div>';
+            } else {
+                matchIndicator.innerHTML = '<div class="alert alert-danger p-2 mb-0"><i class="fas fa-times-circle me-2"></i>Passwords do not match</div>';
+            }
+        } else {
+            matchIndicator.innerHTML = '';
+        }
+    }
+    
+    // Form validation
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const password1 = document.getElementById('password1').value;
+        const password2 = document.getElementById('password2').value;
+        const terms = document.getElementById('terms').checked;
+        const consent = document.getElementById('consent').checked;
+        
+        // Check passwords match
+        if (password1 !== password2) {
+            e.preventDefault();
+            alert('Passwords do not match. Please check and try again.');
+            return false;
+        }
+        
+        // Check password strength
+        if (password1.length < 8) {
+            e.preventDefault();
+            alert('Password must be at least 8 characters long.');
+            return false;
+        }
+        
+        // Check terms and consent
+        if (!terms || !consent) {
+            e.preventDefault();
+            alert('You must agree to the Terms of Service and Privacy Policy.');
+            return false;
+        }
+        
+        // Show loading state
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+        submitBtn.disabled = true;
+    });
+    
+    // Auto-focus first field
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('first_name').focus();
+    });
+</script>
+{% endblock %}

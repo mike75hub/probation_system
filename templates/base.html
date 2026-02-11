@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta name="description" content="Probation Management System - Streamlining offender management and rehabilitation">
+    <meta name="keywords" content="probation, offender management, rehabilitation, compliance tracking">
+    <meta name="author" content="Probation Management System">
+    
+    <title>{% block title %}Probation Management System{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+    
+    <!-- AOS Animation CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    
+    <!-- Extra CSS Block -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Extra Head Block -->
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Theme Toggle - Enhanced -->
+    <div class="theme-toggle position-fixed bottom-0 end-0 m-4 z-3">
+        <button class="btn btn-gradient-primary rounded-pill shadow-lg px-4 py-2 d-flex align-items-center gap-2 border-0" 
+                id="themeToggle" 
+                title="Toggle theme"
+                style="background: linear-gradient(135deg, #005cb9, #003b7a); color: white;">
+            <i class="bi bi-moon-fill d-none"></i>
+            <i class="bi bi-sun-fill d-none"></i>
+            <i class="bi bi-circle-half"></i>
+            <span class="d-none d-sm-inline fw-medium">Switch Theme</span>
+        </button>
+    </div>
+
+    <!-- Top Navigation Bar - Redesigned -->
+    <nav class="navbar navbar-dark shadow-sm sticky-top app-navbar" 
+         style="background: linear-gradient(135deg, #003b7a 0%, #005cb9 100%); min-height: 72px; backdrop-filter: blur(10px);">
+        <div class="container-fluid px-4">
+            <div class="d-flex align-items-center">
+                {% if user.is_authenticated %}
+                <button class="btn btn-link text-white p-2 me-3" 
+                        id="sidebarToggle" 
+                        title="Toggle menu"
+                        style="background: rgba(255,255,255,0.1); border-radius: 12px; width: 40px; height: 40px;"
+                        data-bs-toggle="offcanvas" 
+                        data-bs-target="#appSidebar"
+                        aria-controls="appSidebar">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                {% endif %}
+                
+                <a class="navbar-brand d-flex align-items-center" href="{% url 'dashboard:home' %}">
+                    <div class="d-flex align-items-center justify-content-center me-3"
+                         style="width: 44px; height: 44px; background: rgba(255,255,255,0.15); border-radius: 14px; backdrop-filter: blur(4px);">
+                        <i class="bi bi-shield-check fs-4 text-white"></i>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <span class="fw-bold fs-6 lh-1 mb-1" style="letter-spacing: -0.01em;">Probation Management</span>
+                        <span class="small opacity-75" style="font-size: 0.75rem;">Correctional Services</span>
+                    </div>
+                </a>
+            </div>
+
+            <ul class="navbar-nav flex-row align-items-center">
+                {% if user.is_authenticated %}
+                    <!-- Quick Actions -->
+                    <li class="nav-item me-3 d-none d-md-block">
+                        <a href="{% url 'offenders:offender_create' %}" class="btn btn-sm text-white px-3" 
+                           style="background: rgba(255,255,255,0.12); border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); text-decoration: none;">
+                            <i class="bi bi-plus-circle me-1"></i> Add Offender
+                        </a>
+                    </li>
+                    
+                    <!-- User Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center p-1" 
+                           href="#" 
+                           role="button" 
+                           data-bs-toggle="dropdown" 
+                           aria-expanded="false"
+                           style="background: rgba(255,255,255,0.1); border-radius: 40px; text-decoration: none;">
+                            <div class="avatar-circle me-2 shadow-sm" 
+                                 style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #ffffff30, #ffffff20); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                            </div>
+                            <div class="d-none d-xl-block text-start me-2">
+                                <div class="fw-medium" style="font-size: 0.9rem; line-height: 1.2; color: white;">{{ user.get_full_name|default:user.username }}</div>
+                                <small style="font-size: 0.7rem; opacity: 0.9; color: rgba(255,255,255,0.9);">{{ user.get_role_display|default:"User" }}</small>
+                            </div>
+                            <i class="bi bi-chevron-down text-white-50" style="font-size: 0.8rem;"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" 
+                            style="border-radius: 16px; padding: 0.5rem; min-width: 240px;">
+                            <li class="px-3 py-2 border-bottom">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle-lg me-3" 
+                                         style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #005cb9, #003b7a); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem;">
+                                        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                        <small class="text-muted">{{ user.email }}</small>
+                                    </div>
+                                </div>
+                            </li>
+                            <li><a class="dropdown-item rounded-3 my-1 text-decoration-none" href="{% url 'accounts:profile' %}"><i class="bi bi-person me-3"></i>Profile</a></li>
+                            <li><a class="dropdown-item rounded-3 my-1 text-decoration-none" href="#"><i class="bi bi-gear me-3"></i>Settings</a></li>
+                            <li><hr class="dropdown-divider my-2"></li>
+                            <li>
+                                <form method="post" action="{% url 'accounts:logout' %}" id="logout-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item rounded-3 my-1 text-danger text-decoration-none">
+                                        <i class="bi bi-box-arrow-right me-3"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link px-3 py-2 text-white text-decoration-none" href="{% url 'accounts:login' %}" 
+                           style="background: rgba(255,255,255,0.12); border-radius: 30px; border: 1px solid rgba(255,255,255,0.2);">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <a class="btn btn-light px-4 py-2 text-decoration-none" href="{% url 'accounts:register' %}" 
+                           style="border-radius: 30px; font-weight: 500; color: #003b7a;">
+                            <i class="bi bi-person-plus me-1"></i>Register
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid flex-grow-1 px-0">
+        <div class="row g-0">
+            {% if user.is_authenticated %}
+            <!-- Enhanced Sidebar Offcanvas - Profile Removed -->
+            <div class="offcanvas offcanvas-start" 
+                 tabindex="-1" 
+                 id="appSidebar" 
+                 aria-labelledby="appSidebarLabel"
+                 style="width: 320px; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);">
+                
+                <!-- Sidebar Header -->
+                <div class="offcanvas-header border-bottom px-4 py-3" 
+                     style="background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%);">
+                    <h5 class="offcanvas-title fw-bold d-flex align-items-center" id="appSidebarLabel">
+                        <i class="bi bi-grid-3x3-gap-fill me-2 text-primary"></i>
+                        Navigation Menu
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                
+                <!-- Sidebar Body - Profile Card Removed -->
+                <div class="offcanvas-body px-3 py-4">
+                    <!-- Main Navigation -->
+                    <div class="sidebar-section mb-4">
+                        <h6 class="sidebar-heading px-3 mb-3 text-uppercase small fw-bold text-muted d-flex align-items-center">
+                            <i class="bi bi-compass me-2"></i>Main Navigation
+                        </h6>
+                        <nav class="side-nav" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <a class="side-nav-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}" 
+                               href="{% url 'dashboard:home' %}"
+                               style="color: #4a5568; transition: all 0.2s;">
+                                <i class="bi bi-speedometer2 me-3" style="font-size: 1.1rem; width: 20px;"></i>
+                                <span style="font-weight: 500;">Dashboard</span>
+                                <span class="ms-auto small text-muted" style="font-size: 0.7rem;">Ctrl+D</span>
+                            </a>
+                            
+                            <a class="side-nav-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none {% if request.resolver_match.namespace == 'offenders' %}active{% endif %}" 
+                               href="{% url 'offenders:offender_list' %}"
+                               style="color: #4a5568; transition: all 0.2s;">
+                                <i class="bi bi-person-badge me-3" style="font-size: 1.1rem; width: 20px;"></i>
+                                <span style="font-weight: 500;">Offenders</span>
+                                <span class="ms-auto badge rounded-pill" style="background: rgba(0,92,185,0.1); color: #005cb9; font-weight: 500;">32</span>
+                            </a>
+                            
+                            <!-- Sub-links with proper indentation -->
+                            <div class="ps-4 mt-1 mb-1" style="display: flex; flex-direction: column; gap: 0.15rem;">
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'offenders:offender_create' %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-plus-circle-dotted me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>Add Offender</span>
+                                </a>
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'offenders:assessment_list' %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-clipboard-data me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>Assessments</span>
+                                </a>
+                                {% if offender and offender.pk %}
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'offenders:case_create' offender.pk %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-folder-plus me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>New Case</span>
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            <a class="side-nav-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none {% if request.resolver_match.namespace == 'monitoring' %}active{% endif %}" 
+                               href="{% url 'monitoring:checkin_list' %}"
+                               style="color: #4a5568; transition: all 0.2s;">
+                                <i class="bi bi-clock-history me-3" style="font-size: 1.1rem; width: 20px;"></i>
+                                <span style="font-weight: 500;">Monitoring</span>
+                                <span class="ms-auto badge rounded-pill" style="background: rgba(255,193,7,0.1); color: #b76e00; font-weight: 500;">Live</span>
+                            </a>
+
+                            <a class="side-nav-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none {% if request.resolver_match.namespace == 'programs' %}active{% endif %}" 
+                               href="{% url 'programs:program_list' %}"
+                               style="color: #4a5568; transition: all 0.2s;">
+                                <i class="bi bi-mortarboard me-3" style="font-size: 1.1rem; width: 20px;"></i>
+                                <span style="font-weight: 500;">Programs</span>
+                            </a>
+                            
+                            <div class="ps-4 mt-1 mb-1" style="display: flex; flex-direction: column; gap: 0.15rem;">
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'programs:program_create' %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-plus-circle-dotted me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>Add Program</span>
+                                </a>
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'programs:enrollment_list' %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-people me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>Enrollments</span>
+                                </a>
+                            </div>
+
+                            <a class="side-nav-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none {% if request.resolver_match.namespace == 'reports' %}active{% endif %}" 
+                               href="{% url 'reports:report_list' %}"
+                               style="color: #4a5568; transition: all 0.2s;">
+                                <i class="bi bi-file-earmark-bar-graph me-3" style="font-size: 1.1rem; width: 20px;"></i>
+                                <span style="font-weight: 500;">Reports</span>
+                            </a>
+                            
+                            <div class="ps-4 mt-1 mb-1" style="display: flex; flex-direction: column; gap: 0.15rem;">
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'reports:generate' %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-file-earmark-plus me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>Generate Report</span>
+                                </a>
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'reports:compliance_report' %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-check2-circle me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>Compliance</span>
+                                </a>
+                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                   href="{% url 'reports:performance_report' %}"
+                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                    <i class="bi bi-graph-up me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                    <span>Performance</span>
+                                </a>
+                            </div>
+                        </nav>
+                    </div>
+
+                    <!-- AI Area Section with Accordion -->
+                    <div class="sidebar-section">
+                        <div class="accordion" id="aiAccordion">
+                            <div class="accordion-item border-0 bg-transparent">
+                                <h2 class="accordion-header" id="aiHeading">
+                                    <button class="accordion-button side-nav-toggle px-3 py-3 collapsed" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#aiCollapse" 
+                                            aria-expanded="false" 
+                                            aria-controls="aiCollapse"
+                                            style="background: linear-gradient(135deg, #f0f7ff, #e8f0fe); border-radius: 16px; border: none; box-shadow: none;">
+                                        <i class="bi bi-robot me-2" style="color: #005cb9;"></i>
+                                        <span class="fw-semibold">AI & Analytics</span>
+                                        <span class="badge bg-gradient-primary ms-2 text-white" style="background: linear-gradient(135deg, #005cb9, #003b7a);">New</span>
+                                    </button>
+                                </h2>
+                                <div id="aiCollapse" class="accordion-collapse collapse" aria-labelledby="aiHeading" data-bs-parent="#aiAccordion">
+                                    <div class="accordion-body px-0 pb-0 pt-3">
+                                        <nav class="side-nav" style="display: flex; flex-direction: column; gap: 0.15rem;">
+                                            <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                               href="{% url 'ml_models:model_list' %}"
+                                               style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                                <i class="bi bi-cpu me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                                <span>ML Models</span>
+                                                <span class="ms-auto badge rounded-pill" style="background: rgba(2,132,199,0.1); color: #0284c7; font-weight: 500;">4</span>
+                                            </a>
+                                            <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                               href="{% url 'ml_models:make_prediction' %}"
+                                               style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                                <i class="bi bi-graph-up me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                                <span>Predictions</span>
+                                            </a>
+                                            <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                               href="{% url 'datasets:dataset_list' %}"
+                                               style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                                <i class="bi bi-database me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                                <span>Datasets</span>
+                                            </a>
+                                        </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="sidebar-section mt-4">
+                        <div class="bg-light rounded-4 p-4" style="background: linear-gradient(145deg, #ffffff, #f5f9ff);">
+                            <h6 class="small fw-bold text-uppercase text-muted mb-3 d-flex align-items-center">
+                                <i class="bi bi-bar-chart-steps me-2"></i>Quick Stats
+                            </h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Active Cases</span>
+                                <span class="fw-bold" style="color: #1e293b;">147</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 6px; background: #e2e8f0;">
+                                <div class="progress-bar" style="width: 75%; background: linear-gradient(90deg, #005cb9, #00a3ff); border-radius: 30px;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Compliance Rate</span>
+                                <span class="fw-bold" style="color: #1e293b;">92%</span>
+                            </div>
+                            <div class="progress" style="height: 6px; background: #e2e8f0;">
+                                <div class="progress-bar" style="width: 92%; background: linear-gradient(90deg, #28a745, #34ce57); border-radius: 30px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Main Content Area -->
+            <main id="mainContent" class="col-12 px-4 px-xl-5 py-4 py-xl-5">
+                <!-- Page Header - Enhanced -->
+                <div class="page-header mb-5" data-aos="fade-up" data-aos-duration="500">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                        <div>
+                            <nav aria-label="breadcrumb" class="mb-2">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}" class="text-decoration-none">Home</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">
+                                        {% block breadcrumb %}{% block page_title_alt %}Dashboard{% endblock %}{% endblock %}
+                                    </li>
+                                </ol>
+                            </nav>
+                            <h1 class="h2 fw-bold mb-2" style="letter-spacing: -0.02em; color: #1e293b;">
+                                {% block page_title %}Dashboard{% endblock %}
+                            </h1>
+                            <p class="text-muted mb-0 d-flex align-items-center">
+                                <i class="bi bi-info-circle me-2"></i>
+                                {% block page_subtitle %}Welcome back, {{ user.first_name|default:"User" }}! Here's your overview{% endblock %}
+                            </p>
+                        </div>
+                        <div class="mt-3 mt-md-0">
+                            {% block page_actions %}{% endblock %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages/Alerts - Enhanced -->
+                {% if messages %}
+                <div class="messages mb-5" data-aos="fade-up" data-aos-delay="100">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-lg rounded-4 border-0" 
+                         role="alert"
+                         style="border-left: 6px solid 
+                                {% if message.tags == 'success' %}#28a745
+                                {% elif message.tags == 'error' %}#dc3545
+                                {% elif message.tags == 'warning' %}#ffc107
+                                {% elif message.tags == 'info' %}#17a2b8
+                                {% else %}#6c757d{% endif %};">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="icon-circle d-flex align-items-center justify-content-center"
+                                     style="width: 48px; height: 48px; 
+                                            background: {% if message.tags == 'success' %}rgba(40,167,69,0.1)
+                                                     {% elif message.tags == 'error' %}rgba(220,53,69,0.1)
+                                                     {% elif message.tags == 'warning' %}rgba(255,193,7,0.1)
+                                                     {% elif message.tags == 'info' %}rgba(23,162,184,0.1)
+                                                     {% else %}rgba(108,117,125,0.1){% endif %};
+                                            border-radius: 16px;">
+                                    {% if message.tags == 'success' %}
+                                    <i class="bi bi-check-circle-fill fs-3 text-success"></i>
+                                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                    <i class="bi bi-exclamation-triangle-fill fs-3 text-danger"></i>
+                                    {% elif message.tags == 'warning' %}
+                                    <i class="bi bi-exclamation-circle-fill fs-3 text-warning"></i>
+                                    {% elif message.tags == 'info' %}
+                                    <i class="bi bi-info-circle-fill fs-3 text-info"></i>
+                                    {% else %}
+                                    <i class="bi bi-bell-fill fs-3 text-secondary"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong class="d-block fs-6 mb-1">{{ message.tags|title }}</strong>
+                                        <p class="mb-0">{{ message }}</p>
+                                    </div>
+                                    <button type="button" class="btn-close ms-3 mt-2" data-bs-dismiss="alert"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Page Content -->
+                <div class="content-wrapper" data-aos="fade-up" data-aos-delay="150">
+                    {% block content %}
+                    <!-- Enhanced Default Content -->
+                    <div class="empty-state text-center py-5 my-5">
+                        <div class="empty-state-icon bg-gradient-primary text-white rounded-4 p-5 d-inline-block mb-4 shadow-lg"
+                             style="background: linear-gradient(135deg, #005cb9, #003b7a);">
+                            <i class="bi bi-speedometer2 display-1"></i>
+                        </div>
+                        <h2 class="fw-bold mb-3" style="color: #1e293b;">Welcome to Probation Management System</h2>
+                        <p class="text-muted lead mb-4" style="max-width: 500px; margin: 0 auto;">
+                            Get started by exploring offenders, managing cases, or generating compliance reports.
+                        </p>
+                        <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-4">
+                            <a href="{% url 'offenders:offender_list' %}" 
+                               class="btn btn-gradient-primary text-white px-5 py-3 rounded-3 shadow-lg text-decoration-none"
+                               style="background: linear-gradient(135deg, #005cb9, #003b7a);">
+                                <i class="bi bi-people me-2"></i>View Offenders
+                            </a>
+                            <a href="{% url 'dashboard:home' %}" 
+                               class="btn btn-outline-secondary px-5 py-3 rounded-3 border-2 text-decoration-none">
+                                <i class="bi bi-graph-up me-2"></i>View Analytics
+                            </a>
+                        </div>
+                        
+                        <!-- Quick Tips -->
+                        <div class="row mt-5 pt-4 justify-content-center">
+                            <div class="col-md-8">
+                                <div class="card border-0 bg-light p-4 rounded-4">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-lightbulb fs-1 text-warning me-4"></i>
+                                        <div class="text-start">
+                                            <h6 class="fw-bold mb-2" style="color: #1e293b;">Pro Tip</h6>
+                                            <p class="text-muted mb-0 small">
+                                                Use the sidebar menu to navigate through different modules. You can collapse the sidebar for more screen space.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Enhanced Footer -->
+    <footer class="footer mt-auto py-4 bg-white border-top">
+        <div class="container-fluid px-4 px-xl-5">
+            <div class="row align-items-center g-3">
+                <div class="col-md-6">
+                    <div class="d-flex flex-wrap align-items-center">
+                        <div class="d-flex align-items-center me-4">
+                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 me-2">
+                                <i class="bi bi-shield-check text-primary"></i>
+                            </div>
+                            <span class="fw-semibold" style="color: #1e293b;">
+                                &copy; {% now "Y" %} PMS v2.0
+                            </span>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <a href="#" class="text-decoration-none text-muted hover-primary">Privacy</a>
+                            <span class="text-muted">•</span>
+                            <a href="#" class="text-decoration-none text-muted hover-primary">Terms</a>
+                            <span class="text-muted">•</span>
+                            <a href="#" class="text-decoration-none text-muted hover-primary">Help</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-3">
+                        <span class="text-muted small d-flex align-items-center">
+                            <span class="badge bg-success bg-opacity-10 text-success p-2 me-2 rounded-circle">
+                                <i class="bi bi-shield-fill-check"></i>
+                            </span>
+                            <span>Secure Connection</span>
+                        </span>
+                        <span class="text-muted small d-flex align-items-center">
+                            <span class="badge bg-primary bg-opacity-10 text-primary p-2 me-2 rounded-circle">
+                                <i class="bi bi-people"></i>
+                            </span>
+                            <span id="activeUsersCount">{{ request.session.active_users|default:"127" }} Active</span>
+                        </span>
+                        <span class="text-muted small d-flex align-items-center">
+                            <span class="badge bg-info bg-opacity-10 text-info p-2 me-2 rounded-circle">
+                                <i class="bi bi-clock"></i>
+                            </span>
+                            <span id="currentTime">{% now "H:i" %} UTC</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Enhanced Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-4" id="toastContainer" style="z-index: 9999;"></div>
+
+    <!-- JavaScript Libraries -->
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+    
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    <!-- Page-specific JavaScript -->
+    {% block extra_js %}{% endblock %}
+
+    <!-- Enhanced Initialization Script -->
+    <script>
+        $(document).ready(function() {
+            // Initialize AOS animations
+            AOS.init({
+                duration: 800,
+                once: true,
+                offset: 50
+            });
+
+            // Initialize DataTables with better defaults
+            if ($.fn.DataTable.isDataTable('.data-table')) {
+                $('.data-table').DataTable().destroy();
+            }
+            $('.data-table').DataTable({
+                "pageLength": 25,
+                "responsive": true,
+                "ordering": true,
+                "searching": true,
+                "language": {
+                    "emptyTable": "No data available",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+                    "infoEmpty": "Showing 0 to 0 of 0 entries",
+                    "infoFiltered": "(filtered from _MAX_ total entries)",
+                    "lengthMenu": "Show _MENU_ entries",
+                    "search": "Search:",
+                    "zeroRecords": "No matching records found",
+                    "paginate": {
+                        "first": "First",
+                        "last": "Last",
+                        "next": "<i class='bi bi-chevron-right'></i>",
+                        "previous": "<i class='bi bi-chevron-left'></i>"
+                    }
+                },
+                "dom": "<'row mb-3'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                       "<'row'<'col-sm-12'tr>>" +
+                       "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+            });
+            
+            // Initialize Select2
+            $('.select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Select an option',
+                allowClear: true
+            });
+            
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Initialize popovers
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+            
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+            
+            // Enhanced theme toggle functionality
+            $('#themeToggle').on('click', function() {
+                const html = $('html');
+                const currentTheme = html.attr('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                html.attr('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                // Update icon
+                const icon = $(this).find('i');
+                icon.removeClass('bi-moon-fill bi-sun-fill bi-circle-half');
+                
+                if (newTheme === 'dark') {
+                    icon.addClass('bi-moon-fill');
+                    $(this).css('background', 'linear-gradient(135deg, #1a2634, #2d3748)');
+                } else {
+                    icon.addClass('bi-sun-fill');
+                    $(this).css('background', 'linear-gradient(135deg, #005cb9, #003b7a)');
+                }
+                
+                // Show theme change toast
+                showToast('success', `Switched to ${newTheme} theme`, 'Theme Updated');
+            });
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            $('html').attr('data-bs-theme', savedTheme);
+            
+            const themeIcon = $('#themeToggle').find('i');
+            if (savedTheme === 'dark') {
+                themeIcon.removeClass('bi-sun-fill bi-circle-half').addClass('bi-moon-fill');
+                $('#themeToggle').css('background', 'linear-gradient(135deg, #1a2634, #2d3748)');
+            } else {
+                themeIcon.removeClass('bi-moon-fill bi-circle-half').addClass('bi-sun-fill');
+                $('#themeToggle').css('background', 'linear-gradient(135deg, #005cb9, #003b7a)');
+            }
+            
+            // Sidebar toggle handling - fixed to work with Bootstrap offcanvas
+            $('#sidebarToggle').on('click', function(e) {
+                e.preventDefault();
+                const sidebarEl = document.getElementById('appSidebar');
+                if (sidebarEl) {
+                    const bsOffcanvas = bootstrap.Offcanvas.getInstance(sidebarEl);
+                    if (bsOffcanvas) {
+                        bsOffcanvas.show();
+                    } else {
+                        new bootstrap.Offcanvas(sidebarEl).show();
+                    }
+                }
+            });
+            
+            // AJAX CSRF setup
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+                    }
+                }
+            });
+            
+            // Update active users count periodically
+            function updateActiveUsers() {
+                $.ajax({
+                    url: "{% url 'dashboard:stats_api' %}",
+                    type: 'GET',
+                    success: function(data) {
+                        if (data.active_users) {
+                            $('#activeUsersCount').text(data.active_users + ' Active');
+                        }
+                    },
+                    error: function() {
+                        // Silently fail
+                    }
+                });
+            }
+            
+            // Update every 60 seconds
+            setInterval(updateActiveUsers, 60000);
+            
+            // Update time every second
+            function updateTime() {
+                const now = new Date();
+                const hours = now.getUTCHours().toString().padStart(2, '0');
+                const minutes = now.getUTCMinutes().toString().padStart(2, '0');
+                $('#currentTime').text(`${hours}:${minutes} UTC`);
+            }
+            setInterval(updateTime, 1000);
+            
+            // Mark notifications as read when clicked
+            $('.notification-item').on('click', function() {
+                const notificationId = $(this).data('id');
+                if (notificationId) {
+                    $.ajax({
+                        url: "{% url 'dashboard:notifications_api' %}",
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            action: 'mark_read',
+                            notification_id: notificationId
+                        })
+                    });
+                }
+            });
+            
+            // Responsive table handling
+            $('table').addClass('table-striped table-hover align-middle');
+            
+            // Improve form controls
+            $('select:not(.select2)').addClass('form-select');
+            $('input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], textarea')
+                .addClass('form-control');
+            
+            // Add loading state to buttons on form submit
+            $('form').on('submit', function() {
+                const submitBtn = $(this).find('button[type="submit"]');
+                if (submitBtn.length && !submitBtn.hasClass('no-loading')) {
+                    const originalText = submitBtn.html();
+                    submitBtn.prop('disabled', true);
+                    submitBtn.data('original-text', originalText);
+                    submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Processing...');
+                }
+            });
+            
+            // Prevent double form submission
+            $('form').on('submit', function() {
+                if ($(this).data('submitted') === true) {
+                    return false;
+                }
+                $(this).data('submitted', true);
+            });
+        });
+        
+        // Enhanced utility function to show toast notifications
+        function showToast(type, message, title = null) {
+            const toastId = 'toast-' + Date.now();
+            const icon = {
+                'success': 'bi-check-circle-fill',
+                'error': 'bi-exclamation-circle-fill',
+                'warning': 'bi-exclamation-triangle-fill',
+                'info': 'bi-info-circle-fill'
+            }[type] || 'bi-bell-fill';
+            
+            const bgColor = {
+                'success': '#28a745',
+                'error': '#dc3545',
+                'warning': '#ffc107',
+                'info': '#17a2b8'
+            }[type] || '#6c757d';
+            
+            const toastHtml = `
+                <div class="toast show" 
+                     id="${toastId}" 
+                     role="alert" 
+                     aria-live="assertive" 
+                     aria-atomic="true"
+                     style="border-left: 6px solid ${bgColor}; border-radius: 16px; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                    <div class="d-flex p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 44px; height: 44px; background: ${bgColor}20; border-radius: 12px;">
+                                <i class="bi ${icon} fs-4" style="color: ${bgColor};"></i>
+                            </div>
+                            <div>
+                                ${title ? `<strong class="d-block fs-6 mb-1">${title}</strong>` : ''}
+                                <p class="mb-0 small text-muted">${message}</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close ms-4" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            $('#toastContainer').append(toastHtml);
+            
+            // Auto-remove toast after 5 seconds
+            setTimeout(function() {
+                $(`#${toastId}`).fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+        
+        // Enhanced confirmation dialog
+        function confirmAction(message, callback) {
+            if (window.confirm(message)) {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+                return true;
+            }
+            return false;
+        }
+        
+        // Loading indicator with animation
+        function showLoading(selector = 'body') {
+            if ($('.loading-overlay').length === 0) {
+                $(selector).append(`
+                    <div class="loading-overlay" style="
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.65);
+                        z-index: 9999;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        backdrop-filter: blur(4px);
+                    ">
+                        <div class="text-center bg-white p-5 rounded-5 shadow-xl">
+                            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <h5 class="text-dark mb-0">Loading...</h5>
+                            <p class="text-muted small mt-2">Please wait</p>
+                        </div>
+                    </div>
+                `);
+            }
+        }
+        
+        function hideLoading() {
+            $('.loading-overlay').fadeOut(300, function() {
+                $(this).remove();
+            });
+        }
+        
+        // Debounce function for performance
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // Responsive sidebar handling
+        function handleResponsiveSidebar() {
+            if ($(window).width() < 992) {
+                $('#appSidebar').removeClass('show');
+            }
+        }
+        
+        $(window).on('resize', debounce(handleResponsiveSidebar, 150));
+    </script>
+
+    <!-- Extra body scripts -->
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

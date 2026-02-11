@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Compliance Report - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Compliance Report</h1>
+            <p class="text-muted">Check-in compliance analysis and statistics</p>
+        </div>
+        <div>
+            <a href="{% url 'monitoring:export_compliance_report' %}?date_from={{ date_from }}&date_to={{ date_to }}{% if officer %}&officer={{ officer.pk }}{% endif %}" 
+               class="btn btn-success me-2">
+                <i class="fas fa-file-csv me-2"></i>Export CSV
+            </a>
+            <a href="{% url 'monitoring:compliance_report' %}" class="btn btn-outline-primary">
+                <i class="fas fa-redo me-2"></i>New Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Summary -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Report Summary</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <dl class="row">
+                        <dt class="col-sm-3">Report Type:</dt>
+                        <dd class="col-sm-9">
+                            {% if report_type == 'monthly' %}Monthly Report
+                            {% elif report_type == 'quarterly' %}Quarterly Report
+                            {% elif report_type == 'yearly' %}Annual Report
+                            {% else %}Custom Report{% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Period:</dt>
+                        <dd class="col-sm-9">{{ date_from }} to {{ date_to }}</dd>
+                        
+                        {% if officer %}
+                        <dt class="col-sm-3">Officer:</dt>
+                        <dd class="col-sm-9">{{ officer.get_full_name }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="display-4 fw-bold text-{% if compliance_rate > 80 %}success{% elif compliance_rate > 60 %}warning{% else %}danger{% endif %}">
+                        {{ compliance_rate|floatformat:1 }}%
+                    </div>
+                    <p class="text-muted">Overall Compliance Rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Check-ins
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_checkins }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Completed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Missed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ missed }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Scheduled
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ scheduled }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance by Officer -->
+    {% if checkins_by_officer %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Performance by Officer</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Officer</th>
+                            <th>Total Check-ins</th>
+                            <th>Completed</th>
+                            <th>Missed</th>
+                            <th>Completion Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for officer_stat in checkins_by_officer %}
+                        <tr>
+                            <td>{{ officer_stat.probation_officer__first_name }} {{ officer_stat.probation_officer__last_name }}</td>
+                            <td>{{ officer_stat.total }}</td>
+                            <td>{{ officer_stat.completed }}</td>
+                            <td>{{ officer_stat.missed }}</td>
+                            <td>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-{% if officer_stat.completed|default:0 > 0 and officer_stat.total > 0 %}{% widthratio officer_stat.completed officer_stat.total 100 %}{% endif %}% 
+                                         {% if officer_stat.completed|default:0 > 0 and officer_stat.total > 0 %}{% widthratio officer_stat.completed officer_stat.total 100 %}{% endif %} > 80 %}success{% elif officer_stat.completed|default:0 > 0 and officer_stat.total > 0 %}{% widthratio officer_stat.completed officer_stat.total 100 %}{% endif %} > 60 %}warning{% else %}danger{% endif %}" 
+                                         style="width: {% if officer_stat.completed|default:0 > 0 and officer_stat.total > 0 %}{% widthratio officer_stat.completed officer_stat.total 100 %}{% else %}0{% endif %}%">
+                                    </div>
+                                </div>
+                                <small>
+                                    {% if officer_stat.completed|default:0 > 0 and officer_stat.total > 0 %}
+                                    {% widthratio officer_stat.completed officer_stat.total 100 %}%
+                                    {% else %}0%{% endif %}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Offenders -->
+    {% if top_offenders %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Top 10 Offenders by Check-ins</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Offender</th>
+                            <th>Total Check-ins</th>
+                            <th>Completed</th>
+                            <th>Missed</th>
+                            <th>Compliance Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offender_stat in top_offenders %}
+                        <tr>
+                            <td>{{ offender_stat.offender__user__first_name }} {{ offender_stat.offender__user__last_name }}</td>
+                            <td>{{ offender_stat.total }}</td>
+                            <td>{{ offender_stat.completed }}</td>
+                            <td>{{ offender_stat.missed }}</td>
+                            <td>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-{% if offender_stat.completed|default:0 > 0 and offender_stat.total > 0 %}{% widthratio offender_stat.completed offender_stat.total 100 %}{% endif %}% 
+                                         {% if offender_stat.completed|default:0 > 0 and offender_stat.total > 0 %}{% widthratio offender_stat.completed offender_stat.total 100 %}{% endif %} > 80 %}success{% elif offender_stat.completed|default:0 > 0 and offender_stat.total > 0 %}{% widthratio offender_stat.completed offender_stat.total 100 %}{% endif %} > 60 %}warning{% else %}danger{% endif %}" 
+                                         style="width: {% if offender_stat.completed|default:0 > 0 and offender_stat.total > 0 %}{% widthratio offender_stat.completed offender_stat.total 100 %}{% else %}0{% endif %}%">
+                                    </div>
+                                </div>
+                                <small>
+                                    {% if offender_stat.completed|default:0 > 0 and offender_stat.total > 0 %}
+                                    {% widthratio offender_stat.completed offender_stat.total 100 %}%
+                                    {% else %}0%{% endif %}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Detailed Check-ins -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Detailed Check-ins (Last 50)</h6>
+        </div>
+        <div class="card-body">
+            {% if checkins %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Offender</th>
+                            <th>Officer</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th>Compliance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for checkin in checkins %}
+                        <tr>
+                            <td class="small">{{ checkin.scheduled_date|date:"M d, H:i" }}</td>
+                            <td class="small">{{ checkin.offender.get_full_name }}</td>
+                            <td class="small">{{ checkin.probation_officer.first_name }}</td>
+                            <td class="small">{{ checkin.purpose|truncatechars:30 }}</td>
+                            <td>
+                                <span class="badge bg-{{ checkin.get_status_color }} small">
+                                    {{ checkin.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if checkin.compliance_level %}
+                                <span class="badge bg-{{ checkin.get_compliance_color }} small">
+                                    {{ checkin.get_compliance_level_display }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No check-ins found for the selected period</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

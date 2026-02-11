@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Check-ins - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Check-ins</h1>
+            <p class="text-muted">Schedule and manage offender check-ins</p>
+        </div>
+        <div>
+            <a href="{% url 'monitoring:checkin_create' %}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-2"></i>Schedule Check-in
+            </a>
+            <a href="{% url 'monitoring:quick_checkin' %}" class="btn btn-success">
+                <i class="fas fa-bolt me-2"></i>Quick Check-in
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Check-ins
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_checkins }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Completed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_checkins }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Missed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ missed_checkins }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Overdue
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ overdue_checkins }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="scheduled" {% if request.GET.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="missed" {% if request.GET.status == 'missed' %}selected{% endif %}>Missed</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="offender" class="form-label">Offender</label>
+                    <input type="text" name="offender" id="offender" class="form-control" 
+                           placeholder="Search offender" value="{{ request.GET.offender }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" 
+                           value="{{ request.GET.date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" 
+                           value="{{ request.GET.date_to }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Check-ins Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All Check-ins</h6>
+            <span class="badge bg-primary rounded-pill">{{ checkins|length }} check-ins</span>
+        </div>
+        <div class="card-body">
+            {% if checkins %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Scheduled</th>
+                            <th>Offender</th>
+                            <th>Type/Purpose</th>
+                            <th>Status</th>
+                            <th>Officer</th>
+                            <th>Location</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for checkin in checkins %}
+                        <tr>
+                            <td>
+                                <div class="small">{{ checkin.scheduled_date|date:"M d, Y" }}</div>
+                                <div class="small text-muted">{{ checkin.scheduled_date|time:"H:i" }}</div>
+                                {% if checkin.actual_date %}
+                                <div class="small text-success">
+                                    <i class="fas fa-check"></i> {{ checkin.actual_date|time:"H:i" }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'monitoring:offender_summary' checkin.offender.pk %}" class="fw-bold">
+                                    {{ checkin.offender.get_full_name }}
+                                </a>
+                                <div class="small text-muted">{{ checkin.offender.offender_id }}</div>
+                            </td>
+                            <td>
+                                {% if checkin.checkin_type %}
+                                <span class="badge bg-info">{{ checkin.checkin_type.name }}</span>
+                                {% endif %}
+                                <div class="small">{{ checkin.purpose|truncatechars:40 }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ checkin.get_status_color }}">
+                                    {{ checkin.get_status_display }}
+                                </span>
+                                {% if checkin.compliance_level %}
+                                <span class="badge bg-{{ checkin.get_compliance_color }} small">
+                                    {{ checkin.get_compliance_level_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                {{ checkin.probation_officer.get_full_name }}
+                            </td>
+                            <td class="small">
+                                {{ checkin.location|default:"-"|truncatechars:20 }}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'monitoring:checkin_detail' checkin.pk %}" 
+                                       class="btn btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'monitoring:checkin_update' checkin.pk %}" 
+                                       class="btn btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if checkin.status == 'scheduled' %}
+                                    <a href="{% url 'monitoring:mark_checkin_completed' checkin.pk %}" 
+                                       class="btn btn-outline-success" title="Mark Complete"
+                                       onclick="return confirm('Mark this check-in as completed?')">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar fa-4x text-muted mb-3"></i>
+                <h5>No check-ins found</h5>
+                <p class="text-muted">Schedule your first check-in</p>
+                <a href="{% url 'monitoring:checkin_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Schedule Check-in
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Set default date filter to today
+    if (!$('#date_from').val()) {
+        $('#date_from').val(new Date().toISOString().split('T')[0]);
+    }
+    if (!$('#date_to').val()) {
+        $('#date_to').val(new Date().toISOString().split('T')[0]);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Predictions{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Predictions</h1>
+        <div>
+            <a href="{% url 'ml_models:make_prediction' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+                <i class="fas fa-plus fa-sm text-white-50"></i> Make Prediction
+            </a>
+            <a href="{% url 'ml_models:ml_dashboard' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> ML Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Predictions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_predictions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Correct Predictions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ correct_predictions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Incorrect Predictions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ incorrect_predictions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Accuracy</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if accuracy %}{{ accuracy|floatformat:2 }}%{% else %}N/A{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filter Predictions
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="model" class="form-label">Model</label>
+                    <select name="model" id="model" class="form-control">
+                        <option value="">All Models</option>
+                        {% for model in recent_models %}
+                        <option value="{{ model.id }}" {% if request.GET.model == model.id|stringformat:"s" %}selected{% endif %}>
+                            {{ model.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="is_correct" class="form-label">Correctness</label>
+                    <select name="is_correct" id="is_correct" class="form-control">
+                        <option value="">All</option>
+                        <option value="true" {% if request.GET.is_correct == "true" %}selected{% endif %}>Correct</option>
+                        <option value="false" {% if request.GET.is_correct == "false" %}selected{% endif %}>Incorrect</option>
+                        <option value="unknown" {% if request.GET.is_correct == "unknown" %}selected{% endif %}>Unknown</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" 
+                           value="{{ request.GET.date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" 
+                           value="{{ request.GET.date_to }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           value="{{ request.GET.search }}" placeholder="Search...">
+                </div>
+                <div class="col-12">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search mr-2"></i>Filter
+                        </button>
+                        <a href="{% url 'ml_models:prediction_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times mr-2"></i>Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Predictions Table -->
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Predictions</h6>
+            <span class="badge badge-primary">{{ page_obj.paginator.count }} total</span>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Offender</th>
+                            <th>Model</th>
+                            <th>Prediction</th>
+                            <th>Confidence</th>
+                            <th>Correct</th>
+                            <th>Made By</th>
+                            <th>Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prediction in page_obj %}
+                        <tr>
+                            <td>
+                                <code class="small">{{ prediction.id|slice:":8" }}...</code>
+                            </td>
+                            <td>
+                                {% if prediction.offender %}
+                                {{ prediction.offender.name }}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-secondary">{{ prediction.ml_model.name }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ prediction.predicted_class|default:prediction.predicted_value }}</strong>
+                                {% if prediction.actual_value %}
+                                <br>
+                                <small class="text-muted">Actual: {{ prediction.actual_value }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if prediction.prediction_confidence %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-{{ prediction.prediction_confidence|floatformat:0|divisibleby:'75'|yesno:'success,warning,danger' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ prediction.prediction_confidence|floatformat:0 }}%"
+                                         aria-valuenow="{{ prediction.prediction_confidence|floatformat:0 }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ prediction.prediction_confidence|floatformat:1 }}%
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if prediction.is_correct is True %}
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check"></i> Correct
+                                </span>
+                                {% elif prediction.is_correct is False %}
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-times"></i> Incorrect
+                                </span>
+                                {% else %}
+                                <span class="badge badge-secondary">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ prediction.made_by.get_full_name }}</td>
+                            <td>{{ prediction.prediction_time|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'ml_models:prediction_detail' prediction.pk %}" class="btn btn-info btn-sm" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' and value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Last
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calculator fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No predictions found</h4>
+                <p class="text-muted">Try adjusting your filters or make your first prediction.</p>
+                <a href="{% url 'ml_models:make_prediction' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus mr-2"></i>Make First Prediction
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Predictions by Model -->
+    <div class="card shadow mt-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-chart-bar"></i> Predictions by Model
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Model</th>
+                            <th>Predictions</th>
+                            <th>Avg Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in predictions_by_model %}
+                        <tr>
+                            <td>{{ item.ml_model__name }}</td>
+                            <td>{{ item.count }}</td>
+                            <td>
+                                {% if item.avg_confidence %}
+                                {{ item.avg_confidence|floatformat:2 }}%
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">No prediction data available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

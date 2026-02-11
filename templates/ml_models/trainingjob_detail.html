@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Training Job Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Training Job Details</h1>
+        <div>
+            <a href="{% url 'ml_models:trainingjob_list' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Jobs
+            </a>
+        </div>
+    </div>
+
+    <!-- Job Details Card -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Job Information</h6>
+                    <span class="badge badge-{{ job.status|yesno:'success,warning,danger,info,secondary' }}">
+                        {{ job.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Job ID:</dt>
+                        <dd class="col-sm-9">
+                            <code>{{ job.job_id }}</code>
+                        </dd>
+
+                        <dt class="col-sm-3">Model:</dt>
+                        <dd class="col-sm-9">
+                            {% if job.ml_model %}
+                            <a href="{% url 'ml_models:model_detail' job.ml_model.pk %}">
+                                {{ job.ml_model.name }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">No associated model</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Dataset:</dt>
+                        <dd class="col-sm-9">
+                            {% if job.dataset %}
+                            {{ job.dataset.name }}
+                            {% else %}
+                            <span class="text-muted">No dataset specified</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Started:</dt>
+                        <dd class="col-sm-9">{{ job.created_at|date:"M d, Y H:i:s" }}</dd>
+
+                        <dt class="col-sm-3">Completed:</dt>
+                        <dd class="col-sm-9">
+                            {% if job.completed_at %}
+                            {{ job.completed_at|date:"M d, Y H:i:s" }}
+                            {% else %}
+                            <span class="text-muted">Still running</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Duration:</dt>
+                        <dd class="col-sm-9">
+                            {% if job.completed_at %}
+                            {% with duration=job.completed_at|timeuntil:job.created_at %}
+                            {{ duration }}
+                            {% endwith %}
+                            {% else %}
+                            <span class="text-muted">In progress...</span>
+                            {% endif %}
+                        </dd>
+
+                        {% if job.error_message %}
+                        <dt class="col-sm-3 text-danger">Error:</dt>
+                        <dd class="col-sm-9">
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                {{ job.error_message }}
+                            </div>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Parameters Card -->
+            {% if job.parameters %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-sliders-h"></i> Training Parameters
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tbody>
+                                {% for key, value in job.parameters.items %}
+                                <tr>
+                                    <th>{{ key|title }}</th>
+                                    <td>{{ value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Metrics Card -->
+            {% if job.metrics %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line"></i> Performance Metrics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for key, value in job.metrics.items %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card border-left-{% cycle 'primary' 'success' 'warning' 'info' 'danger' %} shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-{% cycle 'primary' 'success' 'warning' 'info' 'danger' %} text-uppercase mb-1">
+                                                {{ key|title }}
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {% if key == 'accuracy' or key == 'precision' or key == 'recall' or key == 'f1_score' %}
+                                                {{ value|floatformat:4 }}
+                                                {% elif key == 'training_time' %}
+                                                {{ value|floatformat:2 }}s
+                                                {% else %}
+                                                {{ value }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-{% cycle 'brain' 'check' 'chart-bar' 'clock' 'cog' %} fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Actions Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cog"></i> Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if job.ml_model %}
+                        <a href="{% url 'ml_models:model_detail' job.ml_model.pk %}" class="btn btn-primary btn-block">
+                            <i class="fas fa-eye mr-2"></i>View Model
+                        </a>
+                        {% endif %}
+                        
+                        {% if job.dataset %}
+                        <a href="{% url 'datasets:dataset_detail' job.dataset.pk %}" class="btn btn-info btn-block">
+                            <i class="fas fa-database mr-2"></i>View Dataset
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'ml_models:train_model' %}" class="btn btn-success btn-block">
+                            <i class="fas fa-redo mr-2"></i>Train New Model
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Logs Card -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history"></i> Job Logs
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% else %}bg-warning{% endif %}">
+                                <i class="fas fa-{% if job.status == 'completed' %}check{% elif job.status == 'failed' %}times{% else %}spinner{% endif %}"></i>
+                            </div>
+                            <div class="timeline-panel">
+                                <div class="timeline-heading">
+                                    <h6 class="timeline-title">{{ job.get_status_display }}</h6>
+                                    <p class="text-muted">{{ job.created_at|timesince }} ago</p>
+                                </div>
+                                <div class="timeline-body">
+                                    <p>Training job {{ job.status }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if job.completed_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-badge bg-info">
+                                <i class="fas fa-flag-checkered"></i>
+                            </div>
+                            <div class="timeline-panel">
+                                <div class="timeline-heading">
+                                    <h6 class="timeline-title">Completed</h6>
+                                    <p class="text-muted">{{ job.completed_at|timesince }} ago</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e3e6f0;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 50px;
+}
+
+.timeline-badge {
+    position: absolute;
+    left: 10px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 1;
+}
+
+.timeline-panel {
+    padding: 10px;
+    background-color: #f8f9fc;
+    border-radius: 5px;
+    border: 1px solid #e3e6f0;
+}
+</style>
+{% endblock %}

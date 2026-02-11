@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'programs:enrollment_create' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+            <i class="fas fa-user-plus fa-sm text-white-50 mr-2"></i>New Enrollment
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <!-- Total Enrollments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Enrollments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_enrollments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Enrollments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Enrollments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_enrollments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Enrollments -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Completed</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_enrollments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dropout Rate -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Dropout Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if total_enrollments > 0 %}
+                                {{ dropout_rate|floatformat:1 }}%
+                                {% else %}
+                                0%
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3 mb-2">
+                    <label for="program" class="mr-2">Program:</label>
+                    <select class="form-control" id="program" name="program">
+                        <option value="">All Programs</option>
+                        {% for program in programs %}
+                        <option value="{{ program.pk }}" {% if request.GET.program == program.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ program.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group mr-3 mb-2">
+                    <label for="status" class="mr-2">Status:</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="dropped_out" {% if request.GET.status == 'dropped_out' %}selected{% endif %}>Dropped Out</option>
+                        <option value="transferred" {% if request.GET.status == 'transferred' %}selected{% endif %}>Transferred</option>
+                    </select>
+                </div>
+                
+                <div class="form-group mr-3 mb-2">
+                    <label for="offender" class="mr-2">Offender:</label>
+                    <input type="text" class="form-control" id="offender" name="offender" 
+                           placeholder="Search by name..." value="{{ request.GET.offender|default:'' }}">
+                </div>
+                
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search mr-2"></i>Filter
+                </button>
+                <a href="{% url 'programs:enrollment_list' %}" class="btn btn-secondary mb-2 ml-2">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Enrollments Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All Enrollments</h6>
+            <span class="badge badge-primary">{{ page_obj.paginator.count }} Results</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Offender</th>
+                            <th>Program</th>
+                            <th>Enrollment Date</th>
+                            <th>Status</th>
+                            <th>Attendance Rate</th>
+                            <th>Progress</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for enrollment in enrollments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'offenders:offender_detail' enrollment.offender.pk %}" class="font-weight-bold">
+                                    {{ enrollment.offender }}
+                                </a>
+                                <br><small class="text-muted">{{ enrollment.offender.case_number|default:"No case number" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'programs:program_detail' enrollment.program.pk %}" class="font-weight-bold">
+                                    {{ enrollment.program.name }}
+                                </a>
+                                <br><small class="text-muted">{{ enrollment.program.get_program_type_display }}</small>
+                            </td>
+                            <td>{{ enrollment.enrollment_date|date:"M d, Y" }}</td>
+                            <td>
+                                {% if enrollment.status == 'active' %}
+                                <span class="badge badge-success">Active</span>
+                                {% elif enrollment.status == 'completed' %}
+                                <span class="badge badge-primary">Completed</span>
+                                {% elif enrollment.status == 'dropped_out' %}
+                                <span class="badge badge-danger">Dropped Out</span>
+                                {% elif enrollment.status == 'transferred' %}
+                                <span class="badge badge-warning">Transferred</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ enrollment.status|title }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ enrollment.attendance_rate|default:0 }}%;" 
+                                         aria-valuenow="{{ enrollment.attendance_rate|default:0 }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ enrollment.attendance_rate|default:0|floatformat:1 }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if enrollment.progress_notes %}
+                                <button type="button" class="btn btn-sm btn-info" data-toggle="popover" 
+                                        data-content="{{ enrollment.progress_notes }}" title="Progress Notes">
+                                    <i class="fas fa-sticky-note"></i>
+                                </button>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'programs:enrollment_detail' enrollment.pk %}" 
+                                       class="btn btn-info" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'programs:enrollment_update' enrollment.pk %}" 
+                                       class="btn btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-user-friends fa-3x mb-3"></i>
+                                    <h5>No enrollments found</h5>
+                                    <p>Create your first enrollment to get started.</p>
+                                    <a href="{% url 'programs:enrollment_create' %}" class="btn btn-primary">
+                                        <i class="fas fa-user-plus mr-2"></i>Create Enrollment
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in paginator.page_range %}
+                        {% if page_obj.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ i }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Export Options</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button class="btn btn-success btn-block">
+                        <i class="fas fa-file-excel mr-2"></i>Export to Excel
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button class="btn btn-danger btn-block">
+                        <i class="fas fa-file-pdf mr-2"></i>Export to PDF
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button class="btn btn-info btn-block">
+                        <i class="fas fa-print mr-2"></i>Print Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize popovers
+    $('[data-toggle="popover"]').popover({
+        trigger: 'hover',
+        placement: 'top'
+    });
+    
+    // Auto-submit form on program select change
+    $('#program').change(function() {
+        $(this).closest('form').submit();
+    });
+    
+    // Auto-submit form on status select change
+    $('#status').change(function() {
+        $(this).closest('form').submit();
+    });
+});
+</script>
+{% endblock %}

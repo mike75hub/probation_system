@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'programs:category_create' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i>Create Category
+        </a>
+    </div>
+
+    <!-- Categories Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Program Categories</h6>
+            <span class="badge badge-primary">{{ categories.count }} Categories</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Category Name</th>
+                            <th>Description</th>
+                            <th>Icon</th>
+                            <th>Program Count</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>
+                                <a href="#" class="font-weight-bold">{{ category.name }}</a>
+                            </td>
+                            <td>
+                                {% if category.description %}
+                                {{ category.description|truncatechars:50 }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if category.icon %}
+                                <i class="{{ category.icon }} text-primary"></i>
+                                {% else %}
+                                <i class="fas fa-folder text-secondary"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-info">{{ category.programs.count }}</span>
+                                programs
+                            </td>
+                            <td>{{ category.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'programs:category_update' category.pk %}" class="btn btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if category.programs.count == 0 %}
+                                    <a href="{% url 'programs:category_delete' category.pk %}" class="btn btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-secondary" title="Cannot delete - has programs" disabled>
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                    <h5>No categories found</h5>
+                                    <p>Create your first category to organize programs.</p>
+                                    <a href="{% url 'programs:category_create' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus mr-2"></i>Create Category
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Statistics -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Category Usage</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="categoryPieChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-primary"></i> Categories with Programs
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Active Programs
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-info"></i> Total Programs
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'programs:category_create' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus text-primary mr-2"></i>Create New Category
+                        </a>
+                        <a href="{% url 'programs:program_create' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus-square text-success mr-2"></i>Create New Program
+                        </a>
+                        <a href="{% url 'programs:program_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-list text-info mr-2"></i>View All Programs
+                        </a>
+                        <a href="{% url 'programs:program_dashboard' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-tachometer-alt text-warning mr-2"></i>Program Dashboard
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold text-primary">Tips</h6>
+                        <ul class="small text-muted">
+                            <li>Use categories to organize programs by type, location, or target audience</li>
+                            <li>Assign icons to make categories more recognizable</li>
+                            <li>Categories with no programs can be deleted</li>
+                            <li>Consider using categories for reporting and filtering</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Pie Chart for Category Usage
+    var ctx = document.getElementById("categoryPieChart").getContext('2d');
+    var categoryPieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ["With Programs", "Without Programs", "Active"],
+            datasets: [{
+                data: [
+                    {{ categories_with_programs|default:0 }},
+                    {{ categories_without_programs|default:0 }},
+                    {{ active_categories|default:0 }}
+                ],
+                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
+                hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: false
+            },
+            cutoutPercentage: 80,
+        },
+    });
+});
+</script>
+{% endblock %}

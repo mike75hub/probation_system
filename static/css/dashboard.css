@@ -1,0 +1,74 @@
+/* Dashboard-specific polish */
+
+.dashboard-container {
+    padding: 0.5rem 0 1.5rem;
+}
+
+.stat-card {
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.stat-card .card-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.stat-value {
+    font-size: clamp(1.5rem, 2.2vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.stat-label {
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.widget-card {
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    background: var(--surface);
+}
+
+.widget-header {
+    background: var(--surface-muted);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.widget-title {
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.widget-subtitle {
+    color: var(--secondary-color);
+}
+
+.page-title,
+.page-subtitle {
+    margin-bottom: 0.5rem;
+}
+
+.content-wrapper > .card,
+.content-wrapper > .widget-card {
+    margin-bottom: 1.25rem;
+}
+
+/* Make dashboard buttons align cleanly */
+.btn-toolbar {
+    gap: 0.5rem;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .stat-card .card-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

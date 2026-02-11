@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ model.name }} - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">{{ model.name }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'ml_models:model_list' %}">ML Models</a></li>
+                    <li class="breadcrumb-item active">{{ model.name|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'ml_models:make_prediction' %}?model={{ model.pk }}" class="btn btn-success">
+                <i class="fas fa-bolt me-2"></i>Make Prediction
+            </a>
+            <a href="{% url 'ml_models:model_update' model.pk %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-2"></i>Edit
+            </a>
+            {% if model.status == 'trained' %}
+            <a href="{% url 'ml_models:model_deploy' model.pk %}" class="btn btn-warning">
+                <i class="fas fa-rocket me-2"></i>Deploy
+            </a>
+            {% elif model.status == 'deployed' %}
+            <a href="{% url 'ml_models:model_retire' model.pk %}" class="btn btn-danger">
+                <i class="fas fa-ban me-2"></i>Retire
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Model Info -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Model Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Algorithm:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-secondary">{{ model.get_algorithm_display }}</span>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Type:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-info">{{ model.get_model_type_display }}</span>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-{{ model.get_status_color }}">
+                                        {{ model.get_status_display }}
+                                    </span>
+                                    {% if model.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Version:</dt>
+                                <dd class="col-sm-8">v{{ model.version }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Trained:</dt>
+                                <dd class="col-sm-8">{{ model.created_at|date:"F d, Y H:i" }}</dd>
+                                
+                                <dt class="col-sm-4">By:</dt>
+                                <dd class="col-sm-8">{{ model.trained_by.get_full_name|default:model.trained_by.username }}</dd>
+                                
+                                <dt class="col-sm-4">Last Used:</dt>
+                                <dd class="col-sm-8">{{ model.last_used|date:"F d, Y H:i" }}</dd>
+                                
+                                {% if model.deployed_at %}
+                                <dt class="col-sm-4">Deployed:</dt>
+                                <dd class="col-sm-8">{{ model.deployed_at|date:"F d, Y H:i" }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    {% if model.description %}
+                    <div class="mt-3">
+                        <h6>Description:</h6>
+                        <p class="text-muted">{{ model.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <h6>Purpose:</h6>
+                        <p class="text-primary">{{ model.purpose }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Performance Metrics</h6>
+                </div>
+                <div class="card-body">
+                    {% if model.model_type == 'classification' %}
+                    <div class="row text-center mb-4">
+                        <div class="col-md-3">
+                            <div class="display-4 fw-bold text-{% if model.accuracy > 0.8 %}success{% elif model.accuracy > 0.6 %}warning{% else %}danger{% endif %}">
+                                {{ model.accuracy|floatformat:2 }}
+                            </div>
+                            <p class="text-muted">Accuracy</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="display-4 fw-bold text-primary">{{ model.precision|floatformat:2 }}</div>
+                            <p class="text-muted">Precision</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="display-4 fw-bold text-info">{{ model.recall|floatformat:2 }}</div>
+                            <p class="text-muted">Recall</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="display-4 fw-bold text-success">{{ model.f1_score|floatformat:2 }}</div>
+                            <p class="text-muted">F1 Score</p>
+                        </div>
+                    </div>
+                    
+                    {% if model.confusion_matrix %}
+                    <h6>Confusion Matrix:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered text-center">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th colspan="2">Predicted</th>
+                                </tr>
+                                <tr>
+                                    <th>Actual</th>
+                                    <th>Negative</th>
+                                    <th>Positive</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Negative</td>
+                                    <td>{{ model.confusion_matrix.0.0 }}</td>
+                                    <td>{{ model.confusion_matrix.0.1 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Positive</td>
+                                    <td>{{ model.confusion_matrix.1.0 }}</td>
+                                    <td>{{ model.confusion_matrix.1.1 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                    
+                    {% elif model.model_type == 'regression' %}
+                    <div class="row text-center mb-4">
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold text-primary">{{ model.mse|floatformat:2 }}</div>
+                            <p class="text-muted">MSE</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold text-info">{{ model.rmse|floatformat:2 }}</div>
+                            <p class="text-muted">RMSE</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold text-success">{{ model.r2_score|floatformat:2 }}</div>
+                            <p class="text-muted">R² Score</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if model.feature_importance %}
+                    <h6>Top Feature Importance:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Importance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature, importance in model.feature_importance.items|slice:":10" %}
+                                <tr>
+                                    <td>{{ feature }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-info" 
+                                                 role="progressbar" 
+                                                 style="width: {% widthratio importance 1 100 %}%">
+                                            </div>
+                                        </div>
+                                        <small>{{ importance|floatformat:3 }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Predictions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Recent Predictions</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_predictions %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Offender</th>
+                                    <th>Prediction</th>
+                                    <th>Confidence</th>
+                                    <th>Correct</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prediction in recent_predictions %}
+                                <tr>
+                                    <td class="small">{{ prediction.prediction_time|date:"M d, H:i" }}</td>
+                                    <td>
+                                        {% if prediction.offender %}
+                                        <a href="#" class="small">
+                                            {{ prediction.offender.get_full_name }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prediction.predicted_class %}
+                                        <span class="badge bg-primary">{{ prediction.predicted_class }}</span>
+                                        {% elif prediction.predicted_value %}
+                                        <span class="small">{{ prediction.predicted_value|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prediction.prediction_confidence %}
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-{% if prediction.prediction_confidence > 0.8 %}success{% elif prediction.prediction_confidence > 0.6 %}warning{% else %}danger{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {% widthratio prediction.prediction_confidence 1 100 %}%">
+                                            </div>
+                                        </div>
+                                        <small>{{ prediction.prediction_confidence|floatformat:2 }}</small>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prediction.is_correct is not None %}
+                                        {% if prediction.is_correct %}
+                                        <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'ml_models:prediction_list' %}?model={{ model.pk }}" class="btn btn-sm btn-outline-primary w-100">
+                        View All Predictions ({{ prediction_count }})
+                    </a>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                        <p>No predictions made yet</p>
+                        <a href="{% url 'ml_models:make_prediction' %}?model={{ model.pk }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-bolt me-1"></i>Make Prediction
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Actions & Details -->
+        <div class="col-lg-4">
+            <!-- Quick Stats Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Model Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Training Time</span>
+                            <span class="badge bg-primary rounded-pill">
+                                {{ model.training_time_seconds|floatformat:0 }}s
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Model Size</span>
+                            <span class="badge bg-info rounded-pill">
+                                {{ model.model_size_kb|floatformat:0 }} KB
+                            </span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Total Predictions</span>
+                            <span class="badge bg-success rounded-pill">{{ prediction_count }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Recent Accuracy</span>
+                            <span class="badge bg-{% if recent_accuracy > 80 %}success{% elif recent_accuracy > 60 %}warning{% else %}danger{% endif %} rounded-pill">
+                                {% if recent_accuracy %}{{ recent_accuracy|floatformat:1 }}%{% else %}-{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-database me-2"></i>Training Data</h6>
+                </div>
+                <div class="card-body">
+                    {% if model.training_dataset %}
+                    <div class="mb-3">
+                        <h6>Dataset:</h6>
+                        <a href="{% url 'datasets:dataset_detail' model.training_dataset.pk %}" class="d-block">
+                            {{ model.training_dataset.name }}
+                        </a>
+                        <small class="text-muted">
+                            {{ model.training_dataset.row_count }} rows × {{ model.training_dataset.column_count }} columns
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <h6>Target Column:</h6>
+                        <code>{{ model.target_column }}</code>
+                    </div>
+                    
+                    {% if model.feature_columns %}
+                    <h6>Feature Columns ({{ model.feature_columns|length }}):</h6>
+                    <div class="mb-3">
+                        <input type="text" class="form-control form-control-sm" 
+                               placeholder="Search features..." id="featureSearch">
+                    </div>
+                    <div class="list-group list-group-flush" style="max-height: 200px; overflow-y: auto;">
+                        {% for feature in model.feature_columns %}
+                        <div class="list-group-item list-group-item-action py-1 feature-item">
+                            <span class="small font-monospace">{{ feature }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Training Jobs Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-tasks me-2"></i>Training Jobs</h6>
+                </div>
+                <div class="card-body">
+                    {% if training_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in training_jobs %}
+                                <tr>
+                                    <td class="small">{{ job.job_id|truncatechars:10 }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ job.get_status_color }} small">
+                                            {{ job.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="small">{{ job.created_at|date:"M d" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'ml_models:trainingjob_list' %}" class="btn btn-sm btn-outline-primary w-100">
+                        View All Jobs
+                    </a>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-exclamation-circle fa-2x text-warning mb-2"></i>
+                        <p class="text-muted">No training jobs</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Feature search
+    $('#featureSearch').on('keyup', function() {
+        var searchText = $(this).val().toLowerCase();
+        $('.feature-item').each(function() {
+            var featureText = $(this).text().toLowerCase();
+            $(this).toggle(featureText.indexOf(searchText) > -1);
+        });
+    });
+});
+</script>
+{% endblock %}

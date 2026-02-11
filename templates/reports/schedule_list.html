@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Scheduled Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Scheduled Reports</h1>
+        <div>
+            <a href="{% url 'reports:create_schedule' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+                <i class="fas fa-plus fa-sm text-white-50"></i> New Schedule
+            </a>
+            <a href="{% url 'reports:dashboard' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filter Schedules
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-control">
+                        <option value="">All Statuses</option>
+                        {% for status_code, status_name in status_choices %}
+                        <option value="{{ status_code }}" {% if filters.status == status_code %}selected{% endif %}>
+                            {{ status_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="frequency" class="form-label">Frequency</label>
+                    <select name="frequency" id="frequency" class="form-control">
+                        <option value="">All Frequencies</option>
+                        {% for frequency_code, frequency_name in frequency_choices %}
+                        <option value="{{ frequency_code }}" {% if filters.frequency == frequency_code %}selected{% endif %}>
+                            {{ frequency_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="report_type" class="form-label">Report Type</label>
+                    <select name="report_type" id="report_type" class="form-control">
+                        <option value="">All Types</option>
+                        {% for type in report_types %}
+                        <option value="{{ type.id }}" {% if filters.report_type == type.id|stringformat:"s" %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-search mr-2"></i>Filter
+                        </button>
+                        <a href="{% url 'reports:schedule_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Schedules Table -->
+    <div class="card shadow">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Scheduled Reports</h6>
+            <span class="badge badge-primary">{{ page_obj.paginator.count }} total</span>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Schedule Name</th>
+                            <th>Report Type</th>
+                            <th>Frequency</th>
+                            <th>Status</th>
+                            <th>Next Run</th>
+                            <th>Recipients</th>
+                            <th>Created By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for schedule in page_obj %}
+                        <tr>
+                            <td>
+                                <strong>{{ schedule.name }}</strong>
+                                {% if schedule.description %}
+                                <br><small class="text-muted">{{ schedule.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-secondary">{{ schedule.report_type.name }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-info">{{ schedule.get_frequency_display }}</span>
+                            </td>
+                            <td>
+                                {% if schedule.status == 'active' %}
+                                <span class="badge badge-success">Active</span>
+                                {% elif schedule.status == 'paused' %}
+                                <span class="badge badge-warning">Paused</span>
+                                {% elif schedule.status == 'completed' %}
+                                <span class="badge badge-secondary">Completed</span>
+                                {% else %}
+                                <span class="badge badge-danger">Error</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if schedule.next_run %}
+                                {{ schedule.next_run|date:"M d, Y H:i" }}
+                                {% else %}
+                                <span class="text-muted">Not scheduled</span>
+                                {% endif %}
+                                {% if schedule.last_run %}
+                                <br><small class="text-muted">Last: {{ schedule.last_run|date:"M d, Y" }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <i class="fas fa-users"></i> {{ schedule.recipients.count }}
+                            </td>
+                            <td>{{ schedule.created_by.get_full_name }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'reports:update_schedule' schedule.id %}" class="btn btn-info" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-{{ schedule.status == 'active'|yesno:'warning,success' }} toggle-schedule" 
+                                            data-id="{{ schedule.id }}" 
+                                            data-status="{{ schedule.status }}"
+                                            title="{{ schedule.status == 'active'|yesno:'Pause,Activate' }}">
+                                        <i class="fas fa-{{ schedule.status == 'active'|yesno:'pause,play' }}"></i>
+                                    </button>
+                                    <a href="{% url 'reports:delete_schedule' schedule.id %}" class="btn btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Last
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-alt fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No scheduled reports</h4>
+                <p class="text-muted">Create your first scheduled report to automate report generation.</p>
+                <a href="{% url 'reports:create_schedule' %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus mr-2"></i>Create Schedule
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle schedule status
+    document.querySelectorAll('.toggle-schedule').forEach(button => {
+        button.addEventListener('click', function() {
+            const scheduleId = this.dataset.id;
+            const currentStatus = this.dataset.status;
+            const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+            
+            fetch(`{% url 'reports:toggle_schedule' 0 %}`.replace('0', scheduleId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update button appearance
+                    this.dataset.status = newStatus;
+                    this.title = newStatus === 'active' ? 'Pause' : 'Activate';
+                    this.classList.remove(`btn-${currentStatus === 'active' ? 'warning' : 'success'}`);
+                    this.classList.add(`btn-${newStatus === 'active' ? 'warning' : 'success'}`);
+                    
+                    // Update icon
+                    const icon = this.querySelector('i');
+                    icon.classList.remove(`fa-${currentStatus === 'active' ? 'pause' : 'play'}`);
+                    icon.classList.add(`fa-${newStatus === 'active' ? 'pause' : 'play'}`);
+                    
+                    // Update status badge in table
+                    const statusCell = this.closest('tr').querySelector('td:nth-child(4)');
+                    const badge = statusCell.querySelector('.badge');
+                    badge.textContent = data.status_display;
+                    badge.classList.remove(`badge-${currentStatus === 'active' ? 'success' : 'warning'}`);
+                    badge.classList.add(`badge-${newStatus === 'active' ? 'success' : 'warning'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error toggling schedule status');
+            });
+        });
+    });
+</script>
+{% endblock %}

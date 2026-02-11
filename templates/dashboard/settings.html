@@ -1,0 +1,677 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+{% load dashboard_extras %}
+
+{% block title %}Dashboard Settings - Probation System{% endblock %}
+
+{% block page_title %}Dashboard Settings{% endblock %}
+{% block page_subtitle %}Manage your dashboard preferences{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <div class="col-lg-3">
+        <!-- Settings Navigation -->
+        <div class="card">
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="#appearance" class="list-group-item list-group-item-action active" data-bs-toggle="tab">
+                        <i class="bi bi-palette me-2"></i>Appearance
+                    </a>
+                    <a href="#widgets" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="bi bi-grid-3x3 me-2"></i>Widgets
+                    </a>
+                    <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="bi bi-bell me-2"></i>Notifications
+                    </a>
+                    <a href="#data" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="bi bi-database me-2"></i>Data & Privacy
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title">Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" onclick="saveSettings()">
+                        <i class="bi bi-save me-1"></i>Save Changes
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" onclick="resetDashboard()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Reset to Default
+                    </button>
+                    <a href="{% url 'dashboard:export_data' 'json' %}" class="btn btn-outline-info">
+                        <i class="bi bi-download me-1"></i>Export Dashboard Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-9">
+        <div class="tab-content">
+            <!-- Appearance Tab -->
+            <div class="tab-pane fade show active" id="appearance">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-palette me-2"></i>Appearance Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="appearanceForm">
+                            <!-- Theme Selection -->
+                            <div class="mb-4">
+                                <h6>Theme</h6>
+                                <p class="text-muted small mb-3">Choose your preferred color scheme</p>
+                                <div class="row">
+                                    {% for theme in themes %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="form-check card theme-card {% if layout.theme == theme.value %}border-primary{% endif %}"
+                                             onclick="selectTheme('{{ theme.value }}')">
+                                            <div class="card-body text-center">
+                                                <i class="bi {{ theme.icon }} fa-2x mb-2"></i>
+                                                <h6>{{ theme.label }}</h6>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" 
+                                                           name="theme" value="{{ theme.value }}" 
+                                                           id="theme{{ theme.value }}"
+                                                           {% if layout.theme == theme.value %}checked{% endif %}>
+                                                    <label class="form-check-label" for="theme{{ theme.value }}">
+                                                        {{ theme.label }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <!-- Refresh Interval -->
+                            <div class="mb-4">
+                                <h6>Auto-refresh Interval</h6>
+                                <p class="text-muted small mb-3">How often the dashboard updates automatically</p>
+                                <select class="form-select" name="refresh_interval" id="refreshInterval">
+                                    {% for interval in refresh_intervals %}
+                                    <option value="{{ interval.value }}" 
+                                            {% if layout.refresh_interval == interval.value %}selected{% endif %}>
+                                        {{ interval.label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Display Options -->
+                            <div class="mb-4">
+                                <h6>Display Options</h6>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="show_animations" id="showAnimations"
+                                           {% if layout.show_animations %}checked{% endif %}>
+                                    <label class="form-check-label" for="showAnimations">
+                                        Show animations and transitions
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Enable smooth animations for dashboard elements
+                                    </small>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="compact_mode" id="compactMode"
+                                           {% if layout.compact_mode %}checked{% endif %}>
+                                    <label class="form-check-label" for="compactMode">
+                                        Compact mode
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Reduce spacing between dashboard elements
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Layout Preview -->
+                            <div class="mb-4">
+                                <h6>Layout Preview</h6>
+                                <p class="text-muted small mb-3">Preview of your dashboard layout</p>
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-3">
+                                            <div class="bg-white border rounded p-2 text-center">
+                                                <small>Stats</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="bg-white border rounded p-2 text-center">
+                                                <small>Chart</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-3">
+                                            <div class="bg-white border rounded p-2 text-center">
+                                                <small>Quick Actions</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <div class="bg-white border rounded p-2 text-center">
+                                                <small>Recent Activity</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Widgets Tab -->
+            <div class="tab-pane fade" id="widgets">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-grid-3x3 me-2"></i>Widget Management
+                        </h5>
+                        <p class="text-muted small mb-0">Drag and drop widgets to rearrange. Toggle visibility as needed.</p>
+                    </div>
+                    <div class="card-body">
+                        <div id="widgetGrid" class="grid-stack">
+                            {% for widget in available_widgets %}
+                            {% with pref=widget_preferences|get_item:widget.id %}
+                            <div class="grid-stack-item" 
+                                 gs-w="{{ widget.width_lg }}" 
+                                 gs-h="2" 
+                                 gs-x="{{ widget.column }}" 
+                                 gs-y="{{ widget.row }}">
+                                <div class="grid-stack-item-content card">
+                                    <div class="card-header py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">{{ widget.name }}</h6>
+                                                <small class="text-muted">{{ widget.description|truncatewords:10 }}</small>
+                                            </div>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input widget-toggle" 
+                                                       type="checkbox" 
+                                                       data-widget-id="{{ widget.id }}"
+                                                       {% if pref.is_visible %}checked{% endif %}>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center py-3">
+                                            <i class="bi {{ widget.icon|default:'bi-grid' }} fa-3x text-muted mb-3"></i>
+                                            <p class="small text-muted">
+                                                {{ widget.widget_type|title }} Widget
+                                                {% if widget.chart_type %}
+                                                <br><small>Chart type: {{ widget.chart_type }}</small>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endwith %}
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Tip:</strong> Drag widgets to rearrange. Changes are saved automatically when you click "Save Changes".
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications Tab -->
+            <div class="tab-pane fade" id="notifications">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bell me-2"></i>Notification Preferences
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="notificationsForm">
+                            <!-- Notification Types -->
+                            <div class="mb-4">
+                                <h6>Notification Types</h6>
+                                <p class="text-muted small mb-3">Choose which types of notifications you want to receive</p>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="notify_system" id="notifySystem" checked>
+                                    <label class="form-check-label" for="notifySystem">
+                                        System Notifications
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Important system updates and maintenance alerts
+                                    </small>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="notify_updates" id="notifyUpdates" checked>
+                                    <label class="form-check-label" for="notifyUpdates">
+                                        Case Updates
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Changes to your cases or offender status
+                                    </small>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="notify_reminders" id="notifyReminders" checked>
+                                    <label class="form-check-label" for="notifyReminders">
+                                        Reminders
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Upcoming check-ins, assessments, and deadlines
+                                    </small>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="notify_reports" id="notifyReports">
+                                    <label class="form-check-label" for="notifyReports">
+                                        Report Notifications
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        When reports are generated or ready
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Delivery Methods -->
+                            <div class="mb-4">
+                                <h6>Delivery Methods</h6>
+                                <p class="text-muted small mb-3">How you want to receive notifications</p>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="deliver_in_app" id="deliverInApp" checked>
+                                    <label class="form-check-label" for="deliverInApp">
+                                        In-App Notifications
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Show notifications within the application
+                                    </small>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="deliver_email" id="deliverEmail">
+                                    <label class="form-check-label" for="deliverEmail">
+                                        Email Notifications
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Send notifications to your registered email
+                                    </small>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="deliver_sms" id="deliverSms">
+                                    <label class="form-check-label" for="deliverSms">
+                                        SMS Notifications
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Requires mobile number verification
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Notification Schedule -->
+                            <div class="mb-4">
+                                <h6>Notification Schedule</h6>
+                                <p class="text-muted small mb-3">When to receive notifications</p>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="startTime" class="form-label">Start Time</label>
+                                        <input type="time" class="form-control" id="startTime" value="08:00">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="endTime" class="form-label">End Time</label>
+                                        <input type="time" class="form-control" id="endTime" value="18:00">
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Notifications will only be sent during these hours (in-app notifications are always available)
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data & Privacy Tab -->
+            <div class="tab-pane fade" id="data">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-database me-2"></i>Data & Privacy
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Data Export -->
+                        <div class="mb-4">
+                            <h6>Data Export</h6>
+                            <p class="text-muted small mb-3">Export your dashboard data for backup or analysis</p>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <a href="{% url 'dashboard:export_data' 'json' %}" class="btn btn-outline-primary w-100">
+                                        <i class="bi bi-filetype-json me-2"></i>Export as JSON
+                                    </a>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="{% url 'dashboard:export_data' 'csv' %}" class="btn btn-outline-success w-100">
+                                        <i class="bi bi-filetype-csv me-2"></i>Export as CSV
+                                    </a>
+                                </div>
+                                <div class="col-md-4">
+                                    <a href="#" class="btn btn-outline-info w-100" onclick="exportPDF()">
+                                        <i class="bi bi-filetype-pdf me-2"></i>Export as PDF
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includePersonalData">
+                                    <label class="form-check-label" for="includePersonalData">
+                                        Include personal data in export
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeActivityLogs">
+                                    <label class="form-check-label" for="includeActivityLogs">
+                                        Include activity logs
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Data Retention -->
+                        <div class="mb-4">
+                            <h6>Data Retention</h6>
+                            <p class="text-muted small mb-3">Manage how long your dashboard data is stored</p>
+                            
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Dashboard settings and preferences are stored indefinitely. Activity logs are automatically cleaned up after 90 days.
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-danger" onclick="clearDashboardData()">
+                                <i class="bi bi-trash me-1"></i>Clear All Dashboard Data
+                            </button>
+                            <small class="form-text text-muted d-block mt-2">
+                                This will reset all your dashboard settings, widget preferences, and clear cached data.
+                            </small>
+                        </div>
+                        
+                        <!-- Privacy Settings -->
+                        <div class="mb-4">
+                            <h6>Privacy Settings</h6>
+                            <p class="text-muted small mb-3">Control what data is visible to others</p>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="showOnlineStatus" checked>
+                                <label class="form-check-label" for="showOnlineStatus">
+                                    Show online status to other users
+                                </label>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="shareActivity" checked>
+                                <label class="form-check-label" for="shareActivity">
+                                    Share activity with system administrators
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    System administrators may see your activity for monitoring and support purposes
+                                </small>
+                            </div>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="analyticsTracking" checked>
+                                <label class="form-check-label" for="analyticsTracking">
+                                    Allow anonymous analytics tracking
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    Help us improve the system by sharing anonymous usage data
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                        <i class="bi bi-arrow-left me-1"></i>Back
+                    </button>
+                    <div>
+                        <button type="button" class="btn btn-outline-warning me-2" onclick="resetDashboard()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Reset to Default
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveSettings()">
+                            <i class="bi bi-save me-1"></i>Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/7.2.3/gridstack-all.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/gridstack.js/7.2.3/gridstack.min.css" />
+
+<style>
+    .theme-card {
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .theme-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .theme-card.border-primary {
+        border-width: 2px !important;
+    }
+    
+    .grid-stack-item-content {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        // Initialize tab functionality
+        $('.list-group-item').on('click', function(e) {
+            e.preventDefault();
+            $(this).tab('show');
+        });
+        
+        // Initialize grid layout
+        var grid = GridStack.init({
+            cellHeight: 80,
+            margin: 10,
+            animate: true,
+            removable: false,
+            disableDrag: false,
+            disableResize: true,
+            acceptWidgets: false
+        });
+        
+        // Theme selection
+        window.selectTheme = function(themeValue) {
+            $('.theme-card').removeClass('border-primary');
+            $(event.currentTarget).closest('.theme-card').addClass('border-primary');
+            $('#theme' + themeValue).prop('checked', true);
+        };
+        
+        // Widget toggle
+        $('.widget-toggle').on('change', function() {
+            let widgetId = $(this).data('widget-id');
+            let isVisible = $(this).is(':checked');
+            console.log(`Widget ${widgetId} visibility: ${isVisible}`);
+        });
+    });
+    
+    // Save settings
+    window.saveSettings = function() {
+        // Collect appearance settings
+        let appearanceData = {
+            theme: $('input[name="theme"]:checked').val(),
+            refresh_interval: $('#refreshInterval').val(),
+            show_animations: $('#showAnimations').is(':checked'),
+            compact_mode: $('#compactMode').is(':checked')
+        };
+        
+        // Collect widget layout
+        let grid = GridStack.getInstance();
+        let widgets = [];
+        grid.engine.nodes.forEach(function(node) {
+            widgets.push({
+                id: $(node.el).find('.widget-toggle').data('widget-id'),
+                visible: $(node.el).find('.widget-toggle').is(':checked'),
+                x: node.x,
+                y: node.y,
+                width: node.w,
+                height: node.h
+            });
+        });
+        
+        // Collect notification settings
+        let notificationData = {
+            types: {
+                system: $('#notifySystem').is(':checked'),
+                updates: $('#notifyUpdates').is(':checked'),
+                reminders: $('#notifyReminders').is(':checked'),
+                reports: $('#notifyReports').is(':checked')
+            },
+            delivery: {
+                in_app: $('#deliverInApp').is(':checked'),
+                email: $('#deliverEmail').is(':checked'),
+                sms: $('#deliverSms').is(':checked')
+            },
+            schedule: {
+                start_time: $('#startTime').val(),
+                end_time: $('#endTime').val()
+            }
+        };
+        
+        // Send data to server
+        $.ajax({
+            url: "{% url 'dashboard:settings' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                appearance: JSON.stringify(appearanceData),
+                widgets: JSON.stringify(widgets),
+                notifications: JSON.stringify(notificationData)
+            },
+            success: function(response) {
+                showToast('success', 'Settings saved successfully!');
+            },
+            error: function(xhr, status, error) {
+                showToast('error', 'Error saving settings: ' + error);
+            }
+        });
+    };
+    
+    // Reset dashboard
+    window.resetDashboard = function() {
+        if (confirm('Are you sure you want to reset your dashboard to default settings? This cannot be undone.')) {
+            window.location.href = "{% url 'dashboard:reset_layout' %}";
+        }
+    };
+    
+    // Export PDF
+    window.exportPDF = function() {
+        showToast('info', 'PDF export feature is coming soon!');
+    };
+    
+    // Clear dashboard data
+    window.clearDashboardData = function() {
+        if (confirm('Warning: This will delete all your dashboard settings, widget preferences, and cached data. Are you sure?')) {
+            $.ajax({
+                url: "{% url 'dashboard:reset_layout' %}",
+                type: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    clear_all: true
+                },
+                success: function(response) {
+                    showToast('success', 'Dashboard data cleared successfully!');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                },
+                error: function(xhr, status, error) {
+                    showToast('error', 'Error clearing data: ' + error);
+                }
+            });
+        }
+    };
+    
+    // Toast notification
+    function showToast(type, message) {
+        // Create toast element
+        let toast = $(`
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `);
+        
+        // Add to container
+        $('#toastContainer').append(toast);
+        
+        // Initialize and show
+        let bsToast = new bootstrap.Toast(toast[0]);
+        bsToast.show();
+        
+        // Remove after hidden
+        toast.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+    
+    // Create toast container if it doesn't exist
+    if (!$('#toastContainer').length) {
+        $('body').append('<div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+    }
+</script>
+{% endblock %}

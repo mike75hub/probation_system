@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Train ML Model - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-brain me-2"></i>Train New Machine Learning Model
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Model Information -->
+                        <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>Model Information</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.model_type|as_crispy_field }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.description|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <!-- Data Selection -->
+                        <h5 class="mb-3"><i class="fas fa-database me-2"></i>Data Selection</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                {{ form.dataset|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.target_column|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <!-- Algorithm Selection -->
+                        <h5 class="mb-3"><i class="fas fa-cogs me-2"></i>Algorithm Selection</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                {{ form.algorithm|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <!-- Training Parameters -->
+                        <h5 class="mb-3"><i class="fas fa-sliders-h me-2"></i>Training Parameters</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                {{ form.test_size|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.random_state|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <!-- Algorithm Information Cards -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="mb-3">Algorithm Details:</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="card algorithm-card" data-algorithm="random_forest">
+                                            <div class="card-body">
+                                                <h6>Random Forest</h6>
+                                                <p class="small text-muted">Ensemble method using multiple decision trees. Good for most classification tasks.</p>
+                                                <div class="small">
+                                                    <span class="badge bg-primary">High Accuracy</span>
+                                                    <span class="badge bg-success">Handles Non-linear</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card algorithm-card" data-algorithm="logistic_regression">
+                                            <div class="card-body">
+                                                <h6>Logistic Regression</h6>
+                                                <p class="small text-muted">Linear model for binary classification. Fast and interpretable.</p>
+                                                <div class="small">
+                                                    <span class="badge bg-info">Fast Training</span>
+                                                    <span class="badge bg-warning">Linear Only</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card algorithm-card" data-algorithm="xgboost">
+                                            <div class="card-body">
+                                                <h6>XGBoost</h6>
+                                                <p class="small text-muted">Gradient boosting algorithm. Excellent performance but slower training.</p>
+                                                <div class="small">
+                                                    <span class="badge bg-success">High Performance</span>
+                                                    <span class="badge bg-danger">Slow Training</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Notes</h6>
+                            <ul class="mb-0">
+                                <li>Training may take several minutes depending on dataset size</li>
+                                <li>Ensure your dataset is clean and preprocessed before training</li>
+                                <li>For classification, the target column should contain categorical values</li>
+                                <li>For regression, the target column should contain numerical values</li>
+                                <li>Models are saved automatically after training</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'ml_models:model_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>Start Training
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Highlight selected algorithm card
+    function highlightAlgorithm(algorithm) {
+        $('.algorithm-card').removeClass('border-primary');
+        $(`.algorithm-card[data-algorithm="${algorithm}"]`).addClass('border-primary');
+    }
+    
+    // Initial highlight
+    var initialAlgorithm = $('#id_algorithm').val();
+    if (initialAlgorithm) {
+        highlightAlgorithm(initialAlgorithm);
+    }
+    
+    // Update highlight on change
+    $('#id_algorithm').change(function() {
+        highlightAlgorithm($(this).val());
+    });
+    
+    // Click on card to select algorithm
+    $('.algorithm-card').click(function() {
+        var algorithm = $(this).data('algorithm');
+        $('#id_algorithm').val(algorithm);
+        highlightAlgorithm(algorithm);
+    });
+});
+</script>
+
+<style>
+.algorithm-card {
+    cursor: pointer;
+    transition: all 0.3s;
+    height: 100%;
+}
+.algorithm-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.algorithm-card.border-primary {
+    border-width: 2px;
+}
+</style>
+{% endblock %}

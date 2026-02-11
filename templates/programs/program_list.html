@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'programs:program_create' %}" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i>Create Program
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <!-- Total Programs Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Programs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_programs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-list-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Programs Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Programs</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_programs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-play-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Enrollments Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Enrollments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ enrollment_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Completion Rate Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Avg Completion Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_completion_rate|floatformat:1 }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Search & Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3 mb-2">
+                    <label for="search" class="sr-only">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Search programs..." value="{{ request.GET.search|default:'' }}">
+                </div>
+                
+                <div class="form-group mr-3 mb-2">
+                    <label for="program_type" class="mr-2">Type:</label>
+                    <select class="form-control" id="program_type" name="program_type">
+                        <option value="">All Types</option>
+                        <option value="vocational" {% if request.GET.program_type == 'vocational' %}selected{% endif %}>Vocational</option>
+                        <option value="educational" {% if request.GET.program_type == 'educational' %}selected{% endif %}>Educational</option>
+                        <option value="counseling" {% if request.GET.program_type == 'counseling' %}selected{% endif %}>Counseling</option>
+                        <option value="substance_abuse" {% if request.GET.program_type == 'substance_abuse' %}selected{% endif %}>Substance Abuse</option>
+                        <option value="life_skills" {% if request.GET.program_type == 'life_skills' %}selected{% endif %}>Life Skills</option>
+                    </select>
+                </div>
+                
+                <div class="form-group mr-3 mb-2">
+                    <label for="status" class="mr-2">Status:</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
+                    </select>
+                </div>
+                
+                <div class="form-group mr-3 mb-2">
+                    <label for="category" class="mr-2">Category:</label>
+                    <select class="form-control" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in search_form.category.field.queryset %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary mb-2">
+                    <i class="fas fa-search mr-2"></i>Search
+                </button>
+                <a href="{% url 'programs:program_list' %}" class="btn btn-secondary mb-2 ml-2">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Programs Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All Programs</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" 
+                     aria-labelledby="dropdownMenuLink">
+                    <a class="dropdown-item" href="{% url 'programs:program_dashboard' %}">
+                        <i class="fas fa-tachometer-alt fa-fw mr-2"></i>Dashboard
+                    </a>
+                    <a class="dropdown-item" href="{% url 'programs:enrollment_list' %}">
+                        <i class="fas fa-users fa-fw mr-2"></i>View Enrollments
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#exportModal">
+                        <i class="fas fa-file-export fa-fw mr-2"></i>Export Data
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Program Name</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Duration</th>
+                            <th>Enrollments</th>
+                            <th>Status</th>
+                            <th>Completion Rate</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for program in programs %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'programs:program_detail' program.pk %}" class="font-weight-bold">
+                                    {{ program.name }}
+                                </a>
+                                {% if program.description %}
+                                <br><small class="text-muted">{{ program.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-info">
+                                    {{ program.get_program_type_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if program.category %}
+                                <span class="badge badge-secondary">{{ program.category.name }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if program.duration_weeks %}
+                                {{ program.duration_weeks }} weeks
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="font-weight-bold">{{ program.enrollments.count }}</span>
+                                {% if program.max_capacity %}
+                                <br><small class="text-muted">Capacity: {{ program.max_capacity }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if program.status == 'active' %}
+                                <span class="badge badge-success">Active</span>
+                                {% elif program.status == 'inactive' %}
+                                <span class="badge badge-secondary">Inactive</span>
+                                {% elif program.status == 'completed' %}
+                                <span class="badge badge-primary">Completed</span>
+                                {% else %}
+                                <span class="badge badge-warning">Draft</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    {% with completion_rate=program.completion_rate %}
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ completion_rate }}%;" 
+                                         aria-valuenow="{{ completion_rate }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        {{ completion_rate|floatformat:0 }}%
+                                    </div>
+                                    {% endwith %}
+                                </div>
+                            </td>
+                            <td>
+                                {{ program.created_at|date:"M d, Y" }}
+                                <br><small class="text-muted">by {{ program.created_by.get_full_name|default:program.created_by.username }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'programs:program_detail' program.pk %}" 
+                                       class="btn btn-info" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'programs:program_update' program.pk %}" 
+                                       class="btn btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if program.enrollments.count == 0 %}
+                                    <a href="{% url 'programs:program_delete' program.pk %}" 
+                                       class="btn btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <h5>No programs found</h5>
+                                    <p>Create your first program to get started.</p>
+                                    <a href="{% url 'programs:program_create' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus mr-2"></i>Create Program
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in paginator.page_range %}
+                        {% if page_obj.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ i }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'programs:program_create' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-plus text-primary mr-2"></i>Create New Program
+                        </a>
+                        <a href="{% url 'programs:category_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-folder text-success mr-2"></i>Manage Categories
+                        </a>
+                        <a href="{% url 'programs:enrollment_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-users text-info mr-2"></i>View All Enrollments
+                        </a>
+                        <a href="{% url 'programs:program_dashboard' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-bar text-warning mr-2"></i>Program Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Program Types Overview</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="small font-weight-bold text-primary mb-2">By Program Type</h6>
+                            <div class="mb-4">
+                                {% for type in programs_by_type %}
+                                <div class="mb-2">
+                                    <span class="small">{{ type.program_type__name|default:"Other" }}</span>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="progress flex-grow-1 mr-2" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                 style="width: {% widthratio type.count total_programs 100 %}%;">
+                                            </div>
+                                        </div>
+                                        <span class="small font-weight-bold">{{ type.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="small font-weight-bold text-success mb-2">By Status</h6>
+                            <div class="mb-4">
+                                {% for status in programs_by_status %}
+                                <div class="mb-2">
+                                    <span class="small">{{ status.status|title }}</span>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="progress flex-grow-1 mr-2" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {% widthratio status.count total_programs 100 %}%;">
+                                            </div>
+                                        </div>
+                                        <span class="small font-weight-bold">{{ status.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Export Programs Data</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm" method="post" action="#">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="exportFormat">Format</label>
+                        <select class="form-control" id="exportFormat" name="format">
+                            <option value="csv">CSV (Excel)</option>
+                            <option value="pdf">PDF Report</option>
+                            <option value="json">JSON Data</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exportFields">Fields to Include</label>
+                        <select class="form-control" id="exportFields" name="fields" multiple>
+                            <option value="name" selected>Program Name</option>
+                            <option value="type" selected>Program Type</option>
+                            <option value="status" selected>Status</option>
+                            <option value="duration" selected>Duration</option>
+                            <option value="enrollments" selected>Enrollments</option>
+                            <option value="completion_rate" selected>Completion Rate</option>
+                            <option value="created_at" selected>Created Date</option>
+                        </select>
+                        <small class="form-text text-muted">Hold Ctrl (Cmd on Mac) to select multiple fields</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="exportButton">
+                    <i class="fas fa-download mr-2"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Export button handler
+    $('#exportButton').click(function() {
+        // In a real implementation, this would submit the form
+        // For now, we'll show a message
+        alert('Export functionality will be implemented soon!');
+        $('#exportModal').modal('hide');
+    });
+    
+    // Program status colors
+    $('.badge').each(function() {
+        var text = $(this).text().toLowerCase();
+        if (text === 'active') {
+            $(this).addClass('badge-success');
+        } else if (text === 'inactive') {
+            $(this).addClass('badge-secondary');
+        } else if (text === 'completed') {
+            $(this).addClass('badge-primary');
+        } else if (text === 'draft') {
+            $(this).addClass('badge-warning');
+        }
+    });
+    
+    // Search form enhancement
+    $('#search').focus();
+});
+</script>
+{% endblock %}

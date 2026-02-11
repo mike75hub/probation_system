@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'programs:enrollment_update' enrollment.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit fa-sm mr-2"></i>Edit Enrollment
+            </a>
+            <a href="{% url 'programs:enrollment_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left fa-sm mr-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Enrollment Details -->
+        <div class="col-lg-8">
+            <!-- Enrollment Information Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Enrollment Details</h6>
+                    <span class="badge badge-{{ enrollment.status == 'active'|yesno:'success,primary,danger,warning,secondary' }}">
+                        {{ enrollment.status|title }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="font-weight-bold">Offender Information</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Name:</td>
+                                    <td>
+                                        <a href="{% url 'offenders:offender_detail' enrollment.offender.pk %}" class="font-weight-bold">
+                                            {{ enrollment.offender }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Case Number:</td>
+                                    <td>{{ enrollment.offender.case_number|default:"-" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Risk Level:</td>
+                                    <td>
+                                        <span class="badge badge-{{ enrollment.offender.risk_level|lower|default:'secondary' }}">
+                                            {{ enrollment.offender.get_risk_level_display|default:"-" }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Probation Officer:</td>
+                                    <td>{{ enrollment.offender.probation_officer|default:"-" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="font-weight-bold">Program Information</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Program:</td>
+                                    <td>
+                                        <a href="{% url 'programs:program_detail' enrollment.program.pk %}" class="font-weight-bold">
+                                            {{ enrollment.program.name }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Type:</td>
+                                    <td>{{ enrollment.program.get_program_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Duration:</td>
+                                    <td>{{ enrollment.program.duration_weeks }} weeks</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Enrollment Date:</td>
+                                    <td>{{ enrollment.enrollment_date|date:"F d, Y" }}</td>
+                                </tr>
+                                {% if enrollment.expected_completion_date %}
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Expected Completion:</td>
+                                    <td>{{ enrollment.expected_completion_date|date:"F d, Y" }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if enrollment.actual_completion_date %}
+                                <tr>
+                                    <td class="font-weight-bold text-gray-800">Actual Completion:</td>
+                                    <td>{{ enrollment.actual_completion_date|date:"F d, Y" }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Notes -->
+                    {% if enrollment.progress_notes %}
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold text-primary">Progress Notes</h6>
+                        <div class="card border-left-primary shadow">
+                            <div class="card-body">
+                                <p>{{ enrollment.progress_notes|linebreaks }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Attendance Records -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Attendance Records ({{ attended_sessions }}/{{ total_sessions }} sessions)
+                    </h6>
+                    <div class="progress" style="width: 150px; height: 25px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {% widthratio attended_sessions total_sessions 100 %}%;">
+                            {% widthratio attended_sessions total_sessions 100 %}%
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if attendances %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Session</th>
+                                    <th>Date</th>
+                                    <th>Topic</th>
+                                    <th>Status</th>
+                                    <th>Check-in Time</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendances %}
+                                <tr>
+                                    <td>Session {{ attendance.session.session_number }}</td>
+                                    <td>{{ attendance.session.date|date:"M d, Y" }}</td>
+                                    <td>{{ attendance.session.topic|truncatechars:30 }}</td>
+                                    <td>
+                                        {% if attendance.status == 'present' %}
+                                        <span class="badge badge-success">Present</span>
+                                        {% elif attendance.status == 'absent' %}
+                                        <span class="badge badge-danger">Absent</span>
+                                        {% elif attendance.status == 'excused' %}
+                                        <span class="badge badge-warning">Excused</span>
+                                        {% elif attendance.status == 'late' %}
+                                        <span class="badge badge-info">Late</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary">{{ attendance.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attendance.check_in_time %}
+                                        {{ attendance.check_in_time|time:"g:i A" }}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attendance.notes %}
+                                        <button type="button" class="btn btn-sm btn-info" data-toggle="popover" 
+                                                data-content="{{ attendance.notes }}" title="Attendance Notes">
+                                            <i class="fas fa-sticky-note"></i>
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">
+                        <i class="fas fa-calendar fa-3x mb-3"></i><br>
+                        No attendance records found for this enrollment.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Stats & Actions -->
+        <div class="col-lg-4">
+            <!-- Statistics Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Enrollment Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-primary">{{ total_sessions }}</h4>
+                                <small class="text-muted">Total Sessions</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-success">{{ attended_sessions }}</h4>
+                                <small class="text-muted">Attended Sessions</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-info">
+                                    {% widthratio attended_sessions total_sessions 100 %}%
+                                </h4>
+                                <small class="text-muted">Attendance Rate</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="font-weight-bold text-warning">
+                                    {% if enrollment.program.duration_weeks %}
+                                    {{ weeks_completed|default:0 }}/{{ enrollment.program.duration_weeks }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </h4>
+                                <small class="text-muted">Weeks Completed</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold">Program Progress</h6>
+                        <div class="progress" style="height: 25px;">
+                            {% with progress_percentage=enrollment.attendance_rate|default:0 %}
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ progress_percentage }}%;">
+                                {{ progress_percentage|floatformat:1 }}%
+                            </div>
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'programs:enrollment_update' enrollment.pk %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-edit text-warning mr-2"></i>Update Enrollment
+                        </a>
+                        {% if enrollment.status == 'active' %}
+                        <a href="#" class="list-group-item list-group-item-action" data-toggle="modal" data-target="#markCompleteModal">
+                            <i class="fas fa-check-circle text-success mr-2"></i>Mark as Completed
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" data-toggle="modal" data-target="#dropoutModal">
+                            <i class="fas fa-user-times text-danger mr-2"></i>Mark as Dropped Out
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'programs:enrollment_delete' enrollment.pk %}" class="list-group-item list-group-item-action text-danger">
+                            <i class="fas fa-trash mr-2"></i>Delete Enrollment
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Program Information -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Program Information</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="font-weight-bold">{{ enrollment.program.name }}</h6>
+                    <p class="small text-muted">{{ enrollment.program.description|truncatechars:100 }}</p>
+                    
+                    <div class="mt-3">
+                        <p class="mb-1"><i class="fas fa-calendar mr-2"></i>{{ enrollment.program.frequency|title }}</p>
+                        <p class="mb-1"><i class="fas fa-clock mr-2"></i>{{ enrollment.program.session_duration_hours }} hours/session</p>
+                        <p class="mb-1"><i class="fas fa-map-marker mr-2"></i>{{ enrollment.program.location|default:"Not specified" }}</p>
+                    </div>
+                    
+                    <a href="{% url 'programs:program_detail' enrollment.program.pk %}" class="btn btn-sm btn-outline-primary btn-block mt-3">
+                        View Program Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mark Complete Modal -->
+<div class="modal fade" id="markCompleteModal" tabindex="-1" role="dialog" aria-labelledby="markCompleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="markCompleteModalLabel">Mark Enrollment as Completed</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'programs:generate_certificate' enrollment.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="completion_notes">Completion Notes</label>
+                        <textarea class="form-control" id="completion_notes" name="completion_notes" rows="3" 
+                                  placeholder="Enter any notes about the completion..."></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="issue_certificate" name="issue_certificate" checked>
+                        <label class="form-check-label" for="issue_certificate">Issue completion certificate</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Mark as Completed</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Dropout Modal -->
+<div class="modal fade" id="dropoutModal" tabindex="-1" role="dialog" aria-labelledby="dropoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dropoutModalLabel">Mark as Dropped Out</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" action="#">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="dropout_reason">Reason for Dropout</label>
+                        <select class="form-control" id="dropout_reason" name="dropout_reason" required>
+                            <option value="">Select reason...</option>
+                            <option value="voluntary">Voluntary Withdrawal</option>
+                            <option value="non_compliance">Non-compliance</option>
+                            <option value="relocation">Relocation</option>
+                            <option value="medical">Medical Reasons</option>
+                            <option value="disciplinary">Disciplinary Action</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dropout_details">Details</label>
+                        <textarea class="form-control" id="dropout_details" name="dropout_details" rows="3" 
+                                  placeholder="Provide details about the dropout..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Mark as Dropped Out</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize popovers
+    $('[data-toggle="popover"]').popover({
+        trigger: 'hover',
+        placement: 'top'
+    });
+});
+</script>
+{% endblock %}

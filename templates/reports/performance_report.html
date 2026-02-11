@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Performance Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Performance Report</h1>
+        <a href="{% url 'reports:dashboard' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Performance Report Form Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance Report Parameters</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Report Type -->
+                        <div class="form-group mb-4">
+                            <label for="{{ form.report_type.id_for_label }}">{{ form.report_type.label }}</label>
+                            {{ form.report_type }}
+                        </div>
+
+                        <!-- Time Period -->
+                        <div class="card border-left-primary shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Time Period</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.year.id_for_label }}">{{ form.year.label }}</label>
+                                            {{ form.year }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.quarter.id_for_label }}">{{ form.quarter.label }}</label>
+                                            {{ form.quarter }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.month.id_for_label }}">{{ form.month.label }}</label>
+                                            {{ form.month }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comparison Options -->
+                        <div class="card border-left-warning shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Comparison Options</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            {{ form.compare_with_previous }}
+                                            <label class="form-check-label" for="{{ form.compare_with_previous.id_for_label }}">
+                                                {{ form.compare_with_previous.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            {{ form.show_trends }}
+                                            <label class="form-check-label" for="{{ form.show_trends.id_for_label }}">
+                                                {{ form.show_trends.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics -->
+                        <div class="card border-left-success shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Metrics</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            {{ form.include_kpis }}
+                                            <label class="form-check-label" for="{{ form.include_kpis.id_for_label }}">
+                                                {{ form.include_kpis.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            {{ form.include_benchmarks }}
+                                            <label class="form-check-label" for="{{ form.include_benchmarks.id_for_label }}">
+                                                {{ form.include_benchmarks.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-cog fa-spin d-none" id="loadingSpinner"></i>
+                                <i class="fas fa-chart-line"></i> Generate Performance Report
+                            </button>
+                            <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Information Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> About Performance Reports
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p>Performance reports analyze system and personnel effectiveness including:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-user-tie text-primary mr-2"></i>
+                            <strong>Officer Performance</strong> - Case management effectiveness
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-project-diagram text-success mr-2"></i>
+                            <strong>Program Effectiveness</strong> - Rehabilitation success rates
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-redo text-warning mr-2"></i>
+                            <strong>Recidivism Analysis</strong> - Re-offense rates and patterns
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-shield-alt text-danger mr-2"></i>
+                            <strong>Risk Assessment</strong> - Prediction accuracy analysis
+                        </li>
+                    </ul>
+                    <hr>
+                    <h6 class="font-weight-bold">Key Performance Indicators:</h6>
+                    <div class="mt-2">
+                        <span class="badge badge-primary mb-1">Case Closure Rate</span>
+                        <span class="badge badge-success mb-1">Program Completion</span>
+                        <span class="badge badge-warning mb-1">Recidivism Rate</span>
+                        <span class="badge badge-info mb-1">Risk Prediction Accuracy</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tachometer-alt"></i> Current Performance
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <div class="h5 mb-3">Quarter {{ current_quarter }} {{ current_year }}</div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <div class="card border-left-primary shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                    Program Success</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">72%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="card border-left-success shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                    Case Closure</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">45%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card border-left-warning shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                    Recidivism</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">18%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card border-left-info shadow h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                    Risk Accuracy</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">85%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show loading spinner on form submit
+    document.querySelector('form').addEventListener('submit', function() {
+        const spinner = document.getElementById('loadingSpinner');
+        spinner.classList.remove('d-none');
+    });
+
+    // Quarter and month exclusivity
+    document.addEventListener('DOMContentLoaded', function() {
+        const quarterSelect = document.getElementById('id_quarter');
+        const monthSelect = document.getElementById('id_month');
+        
+        function updateExclusivity() {
+            if (quarterSelect.value && monthSelect.value) {
+                alert('Please select either quarter or month, not both.');
+                monthSelect.value = '';
+            }
+        }
+        
+        quarterSelect.addEventListener('change', updateExclusivity);
+        monthSelect.addEventListener('change', updateExclusivity);
+    });
+</script>
+{% endblock %}

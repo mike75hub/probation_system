@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user me-2"></i>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>User Account Information</h5>
+                                <div class="mb-3">
+                                    {{ form.first_name|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.last_name|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.username|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.email|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.phone|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Offender Information</h5>
+                                <div class="mb-3">
+                                    {{ form.offender_id|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.date_of_birth|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.gender|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.nationality|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.id_number|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h5>Contact Information</h5>
+                                <div class="mb-3">
+                                    {{ form.address|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.county|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.sub_county|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.phone_alternative|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Emergency Contact</h5>
+                                <div class="mb-3">
+                                    {{ form.emergency_contact_name|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.emergency_contact_phone|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.emergency_contact_relationship|as_crispy_field }}
+                                </div>
+                                
+                                <h5 class="mt-4">Risk Assessment</h5>
+                                <div class="mb-3">
+                                    {{ form.risk_level|as_crispy_field }}
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.is_active|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'offenders:offender_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Offender
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if offender %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <a href="{% url 'offenders:case_create' offender.pk %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-gavel me-2"></i>Add Case
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <a href="{% url 'offenders:assessment_create' offender.pk %}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-clipboard-check me-2"></i>New Assessment
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <a href="{% url 'offenders:offender_detail' offender.pk %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-eye me-2"></i>View Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

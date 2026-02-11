@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ offender.offender_id }} - Probation System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 0;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    .risk-badge {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+    .stat-card {
+        transition: transform 0.3s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center">
+                    <div class="me-4">
+                        <div class="bg-white rounded-circle p-3">
+                            <i class="fas fa-user fa-3x text-primary"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">{{ offender.get_full_name }}</h1>
+                        <p class="mb-0">
+                            <strong>Offender ID:</strong> {{ offender.offender_id }} | 
+                            <strong>National ID:</strong> {{ offender.id_number }} |
+                            <strong>Age:</strong> {{ offender.age }} years
+                        </p>
+                        <p class="mb-0">
+                            <strong>Contact:</strong> {{ offender.user.phone }} | 
+                            {% if offender.email %}{{ offender.email }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="mb-3">
+                    <span class="badge risk-badge bg-{{ offender.get_risk_color }} fs-6">
+                        {{ offender.get_risk_level_display }} Risk
+                    </span>
+                    {% if offender.is_active %}
+                    <span class="badge risk-badge bg-success fs-6">Active</span>
+                    {% else %}
+                    <span class="badge risk-badge bg-secondary fs-6">Inactive</span>
+                    {% endif %}
+                </div>
+                <div class="btn-group">
+                    {% if user.is_admin or user.is_officer %}
+                    <a href="{% url 'offender_update' offender.pk %}" class="btn btn-light">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <a href="{% url 'case_create' offender.pk %}" class="btn btn-light">
+                        <i class="fas fa-gavel me-2"></i>Add Case
+                    </a>
+                    <a href="{% url 'assessment_create' offender.pk %}" class="btn btn-light">
+                        <i class="fas fa-clipboard-check me-2"></i>New Assessment
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card border-left-primary">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Cases
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ cases.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-gavel fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card border-left-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Active Cases
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ cases|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-running fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card border-left-info">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Assessments
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ assessments.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card border-left-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Latest Risk Score
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if latest_assessment %}
+                                    {{ latest_assessment.overall_risk_score|floatformat:1 }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Personal Information -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-user-circle me-2"></i>Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Date of Birth:</th>
+                            <td>{{ offender.date_of_birth }}</td>
+                        </tr>
+                        <tr>
+                            <th>Gender:</th>
+                            <td>{{ offender.get_gender_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Nationality:</th>
+                            <td>{{ offender.nationality }}</td>
+                        </tr>
+                        <tr>
+                            <th>Address:</th>
+                            <td>{{ offender.address }}</td>
+                        </tr>
+                        <tr>
+                            <th>County:</th>
+                            <td>{{ offender.county }}</td>
+                        </tr>
+                        <tr>
+                            <th>Sub-County:</th>
+                            <td>{{ offender.sub_county }}</td>
+                        </tr>
+                    </table>
+                    
+                    <div class="mt-3">
+                        <h6><i class="fas fa-phone-alt me-2"></i>Emergency Contact</h6>
+                        <p class="mb-1">{{ offender.emergency_contact_name }}</p>
+                        <p class="mb-1">{{ offender.emergency_contact_phone }}</p>
+                        <p class="mb-0 text-muted">{{ offender.emergency_contact_relationship }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cases -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="fas fa-gavel me-2"></i>Cases</h5>
+                    {% if user.is_admin or user.is_officer %}
+                    <a href="{% url 'case_create' offender.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Case
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if cases %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Case No.</th>
+                                    <th>Offense</th>
+                                    <th>Court</th>
+                                    <th>Sentence</th>
+                                    <th>Officer</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for case in cases %}
+                                <tr>
+                                    <td><strong>{{ case.case_number }}</strong></td>
+                                    <td>{{ case.offense }}</td>
+                                    <td>{{ case.court_name }}</td>
+                                    <td>
+                                        {{ case.get_sentence_type_display }}<br>
+                                        <small class="text-muted">Ends: {{ case.sentence_end }}</small>
+                                    </td>
+                                    <td>
+                                        {% if case.probation_officer %}
+                                            {{ case.probation_officer.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">Not assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ case.get_status_color }}">
+                                            {{ case.get_status_display }}
+                                        </span>
+                                        {% if case.days_remaining > 0 %}
+                                        <br><small>{{ case.days_remaining }} days remaining</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#caseModal{{ case.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Case Modal -->
+                                <div class="modal fade" id="caseModal{{ case.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Case: {{ case.case_number }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h6>Case Details</h6>
+                                                        <p><strong>Offense:</strong> {{ case.offense }}</p>
+                                                        <p><strong>Category:</strong> {{ case.get_offense_category_display }}</p>
+                                                        <p><strong>Offense Date:</strong> {{ case.offense_date }}</p>
+                                                        <p><strong>Court:</strong> {{ case.court_name }}, {{ case.court_location }}</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6>Sentencing</h6>
+                                                        <p><strong>Sentence Type:</strong> {{ case.get_sentence_type_display }}</p>
+                                                        <p><strong>Duration:</strong> {{ case.sentence_duration }} months</p>
+                                                        <p><strong>Start:</strong> {{ case.sentence_start }}</p>
+                                                        <p><strong>End:</strong> {{ case.sentence_end }}</p>
+                                                        <p><strong>Status:</strong> 
+                                                            <span class="badge bg-{{ case.get_status_color }}">
+                                                                {{ case.get_status_display }}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {% if case.special_conditions %}
+                                                <div class="mt-3">
+                                                    <h6>Special Conditions</h6>
+                                                    <p>{{ case.special_conditions }}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% if case.notes %}
+                                                <div class="mt-3">
+                                                    <h6>Notes</h6>
+                                                    <p>{{ case.notes }}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-gavel fa-2x mb-2"></i>
+                            <p class="mb-0">No cases found for this offender.</p>
+                            {% if user.is_admin or user.is_officer %}
+                            <a href="{% url 'case_create' offender.pk %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-2"></i>Add First Case
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Assessments -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="fas fa-clipboard-list me-2"></i>Assessments</h5>
+                    {% if user.is_admin or user.is_officer %}
+                    <a href="{% url 'assessment_create' offender.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Assessment
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if assessments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Criminal History</th>
+                                    <th>Employment</th>
+                                    <th>Substance Abuse</th>
+                                    <th>Family Support</th>
+                                    <th>Risk Score</th>
+                                    <th>Assessed By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assessment in assessments %}
+                                <tr>
+                                    <td>{{ assessment.assessment_date }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if assessment.criminal_history < 3 %}success{% elif assessment.criminal_history < 7 %}warning{% else %}danger{% endif %}">
+                                            {{ assessment.criminal_history }}/10
+                                        </span>
+                                    </td>
+                                    <td>{{ assessment.get_employment_status_display }}</td>
+                                    <td>
+                                        {% if assessment.substance_abuse %}
+                                        <span class="badge bg-danger">Yes</span>
+                                        {% else %}
+                                        <span class="badge bg-success">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if assessment.family_support > 3 %}success{% elif assessment.family_support > 2 %}warning{% else %}danger{% endif %}">
+                                            {{ assessment.family_support }}/5
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if assessment.overall_risk_score %}
+                                            {% with score=assessment.overall_risk_score %}
+                                                {% if score < 30 %}
+                                                <span class="badge bg-success">{{ score|floatformat:1 }}</span>
+                                                {% elif score < 70 %}
+                                                <span class="badge bg-warning">{{ score|floatformat:1 }}</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">{{ score|floatformat:1 }}</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if assessment.assessed_by %}
+                                            {{ assessment.assessed_by.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">Unknown</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#assessmentModal{{ assessment.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Assessment Modal -->
+                                <div class="modal fade" id="assessmentModal{{ assessment.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Assessment - {{ assessment.assessment_date }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h6>Criminal & Social Factors</h6>
+                                                        <p><strong>Criminal History:</strong> {{ assessment.criminal_history }}/10</p>
+                                                        <p><strong>Education:</strong> {{ assessment.get_education_level_display }}</p>
+                                                        <p><strong>Employment:</strong> {{ assessment.get_employment_status_display }}</p>
+                                                        <p><strong>Employment Duration:</strong> {{ assessment.employment_duration }} months</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6>Behavioral Factors</h6>
+                                                        <p><strong>Substance Abuse:</strong> 
+                                                            {% if assessment.substance_abuse %}
+                                                            <span class="badge bg-danger">Yes</span>
+                                                            {% else %}
+                                                            <span class="badge bg-success">No</span>
+                                                            {% endif %}
+                                                        </p>
+                                                        <p><strong>Mental Health Issues:</strong> 
+                                                            {% if assessment.mental_health_issues %}
+                                                            <span class="badge bg-danger">Yes</span>
+                                                            {% else %}
+                                                            <span class="badge bg-success">No</span>
+                                                            {% endif %}
+                                                        </p>
+                                                        <p><strong>Anger Issues:</strong> 
+                                                            {% if assessment.anger_issues %}
+                                                            <span class="badge bg-danger">Yes</span>
+                                                            {% else %}
+                                                            <span class="badge bg-success">No</span>
+                                                            {% endif %}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row mt-3">
+                                                    <div class="col-md-6">
+                                                        <h6>Support Systems (1-5)</h6>
+                                                        <p><strong>Family Support:</strong> {{ assessment.family_support }}/5</p>
+                                                        <p><strong>Peer Support:</strong> {{ assessment.peer_support }}/5</p>
+                                                        <p><strong>Community Ties:</strong> {{ assessment.community_ties }}/5</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6>Risk Factors (1-5)</h6>
+                                                        <p><strong>Financial Stability:</strong> {{ assessment.financial_stability }}/5</p>
+                                                        <p><strong>Housing Stability:</strong> {{ assessment.housing_stability }}/5</p>
+                                                        <p><strong>Overall Risk Score:</strong> 
+                                                            <span class="badge bg-{% if assessment.overall_risk_score < 30 %}success{% elif assessment.overall_risk_score < 70 %}warning{% else %}danger{% endif %}">
+                                                                {{ assessment.overall_risk_score|floatformat:1 }}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                {% if assessment.recommended_interventions %}
+                                                <div class="mt-3">
+                                                    <h6>Recommended Interventions</h6>
+                                                    <p>{{ assessment.recommended_interventions }}</p>
+                                                </div>
+                                                {% endif %}
+                                                
+                                                {% if assessment.notes %}
+                                                <div class="mt-3">
+                                                    <h6>Notes</h6>
+                                                    <p>{{ assessment.notes }}</p>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                            <p class="mb-0">No assessments found for this offender.</p>
+                            {% if user.is_admin or user.is_officer %}
+                            <a href="{% url 'assessment_create' offender.pk %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-2"></i>Add First Assessment
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Make Prediction - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>Make Prediction
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate id="predictionForm">
+                        {% csrf_token %}
+                        
+                        <!-- Model Selection -->
+                        <h5 class="mb-3"><i class="fas fa-robot me-2"></i>Select Model</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                {{ form.ml_model|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <!-- Features Input -->
+                        <div id="featuresSection">
+                            <h5 class="mb-3"><i class="fas fa-sliders-h me-2"></i>Input Features</h5>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Select a model first to see the required features
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Prediction Guidelines</h6>
+                            <ul class="mb-0">
+                                <li>Ensure feature values are in the correct format (numbers for numerical features)</li>
+                                <li>Categorical features should be encoded as numbers</li>
+                                <li>Missing values may affect prediction accuracy</li>
+                                <li>Predictions are saved to the database for future analysis</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'ml_models:model_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success" id="predictButton" disabled>
+                                <i class="fas fa-bolt me-2"></i>Make Prediction
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Prediction Results (Hidden Initially) -->
+            <div class="card mt-4" id="predictionResults" style="display: none;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Prediction Results</h5>
+                </div>
+                <div class="card-body">
+                    <div id="resultsContent">
+                        <!-- Results will be loaded here via AJAX -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Load features when model is selected
+    $('#id_ml_model').change(function() {
+        var modelId = $(this).val();
+        
+        if (!modelId) {
+            $('#featuresSection').html(`
+                <h5 class="mb-3"><i class="fas fa-sliders-h me-2"></i>Input Features</h5>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Select a model first to see the required features
+                </div>
+            `);
+            $('#predictButton').prop('disabled', true);
+            return;
+        }
+        
+        // Show loading
+        $('#featuresSection').html(`
+            <h5 class="mb-3"><i class="fas fa-sliders-h me-2"></i>Input Features</h5>
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading features...</p>
+            </div>
+        `);
+        
+        // Get features via AJAX
+        $.ajax({
+            url: '{% url "ml_models:get_model_features" %}',
+            type: 'POST',
+            data: {
+                'model_id': modelId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success && response.features.length > 0) {
+                    var html = `
+                        <h5 class="mb-3"><i class="fas fa-sliders-h me-2"></i>Input Features</h5>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Model requires ${response.features.length} features
+                        </div>
+                        <div class="row">
+                    `;
+                    
+                    response.features.forEach(function(feature, index) {
+                        var colClass = response.features.length > 6 ? 'col-md-4' : 'col-md-6';
+                        html += `
+                            <div class="${colClass} mb-3">
+                                <label for="feature_${index}" class="form-label">
+                                    ${feature.replace(/_/g, ' ').toUpperCase()}
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="feature_${index}" 
+                                       name="feature_${feature}"
+                                       step="0.01"
+                                       required>
+                                <div class="form-text">Enter value for ${feature}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    $('#featuresSection').html(html);
+                    $('#predictButton').prop('disabled', false);
+                    
+                } else {
+                    $('#featuresSection').html(`
+                        <h5 class="mb-3"><i class="fas fa-sliders-h me-2"></i>Input Features</h5>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No features defined for this model
+                        </div>
+                    `);
+                    $('#predictButton').prop('disabled', true);
+                }
+            },
+            error: function() {
+                $('#featuresSection').html(`
+                    <h5 class="mb-3"><i class="fas fa-sliders-h me-2"></i>Input Features</h5>
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading features
+                    </div>
+                `);
+                $('#predictButton').prop('disabled', true);
+            }
+        });
+    });
+    
+    // Handle form submission
+    $('#predictionForm').submit(function(e) {
+        e.preventDefault();
+        
+        // Disable button and show loading
+        $('#predictButton').prop('disabled', true).html(`
+            <div class="spinner-border spinner-border-sm me-2"></div>
+            Predicting...
+        `);
+        
+        // Submit form via AJAX
+        $.ajax({
+            url: '{% url "ml_models:make_prediction" %}',
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                // Re-enable button
+                $('#predictButton').prop('disabled', false).html(`
+                    <i class="fas fa-bolt me-2"></i>Make Prediction
+                `);
+                
+                // Show results
+                $('#predictionResults').show();
+                
+                if (response.success) {
+                    var result = response.result;
+                    var html = `
+                        <div class="text-center mb-4">
+                            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                            <h4>Prediction Successful!</h4>
+                            <p class="text-muted">Prediction saved to database</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Prediction Details</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <dl class="row">
+                                            <dt class="col-sm-5">Model:</dt>
+                                            <dd class="col-sm-7">${result.model_name}</dd>
+                                            
+                                            <dt class="col-sm-5">Prediction Time:</dt>
+                                            <dd class="col-sm-7">${new Date().toLocaleString()}</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Prediction Result</h6>
+                                    </div>
+                                    <div class="card-body">
+                    `;
+                    
+                    if (result.risk_label) {
+                        html += `
+                            <div class="display-4 fw-bold text-${result.risk_level === 'High Risk' ? 'danger' : result.risk_level === 'Medium Risk' ? 'warning' : 'success'}">
+                                ${result.risk_label}
+                            </div>
+                            <p class="text-muted">Risk Assessment</p>
+                            <div class="mt-3">
+                                <h6>Confidence: ${(result.confidence * 100).toFixed(1)}%</h6>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-${result.confidence > 0.8 ? 'success' : result.confidence > 0.6 ? 'warning' : 'danger'}" 
+                                         role="progressbar" 
+                                         style="width: ${result.confidence * 100}%">
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (result.will_recidivate !== undefined) {
+                        html += `
+                            <div class="display-4 fw-bold text-${result.will_recidivate ? 'danger' : 'success'}">
+                                ${result.will_recidivate ? 'Will Recidivate' : 'Will Not Recidivate'}
+                            </div>
+                            <p class="text-muted">Recidivism Prediction</p>
+                            <div class="mt-3">
+                                <h6>Probability: ${(result.probability * 100).toFixed(1)}%</h6>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-${result.probability > 0.5 ? 'danger' : 'success'}" 
+                                         role="progressbar" 
+                                         style="width: ${result.probability * 100}%">
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <a href="${response.prediction_url}" class="btn btn-primary me-2">
+                                <i class="fas fa-eye me-2"></i>View Prediction Details
+                            </a>
+                            <button class="btn btn-outline-secondary" onclick="$('#predictionForm')[0].reset(); $('#predictionResults').hide();">
+                                <i class="fas fa-redo me-2"></i>Make Another Prediction
+                            </button>
+                        </div>
+                    `;
+                    
+                    $('#resultsContent').html(html);
+                    
+                } else {
+                    $('#resultsContent').html(`
+                        <div class="text-center mb-4">
+                            <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                            <h4>Prediction Failed!</h4>
+                            <p class="text-muted">${response.error}</p>
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-primary" onclick="$('#predictionResults').hide();">
+                                <i class="fas fa-redo me-2"></i>Try Again
+                            </button>
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                // Re-enable button
+                $('#predictButton').prop('disabled', false).html(`
+                    <i class="fas fa-bolt me-2"></i>Make Prediction
+                `);
+                
+                // Show error
+                $('#predictionResults').show();
+                $('#resultsContent').html(`
+                    <div class="text-center mb-4">
+                        <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                        <h4>Error!</h4>
+                        <p class="text-muted">An error occurred while making the prediction</p>
+                    </div>
+                `);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

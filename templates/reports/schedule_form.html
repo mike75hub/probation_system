@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'reports:schedule_list' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Schedules
+        </a>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Schedule Form Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Schedule Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                                    {{ form.name }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+                                    {{ form.status }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Report and Frequency -->
+                        <div class="card border-left-primary shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Report Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="{{ form.report_type.id_for_label }}">{{ form.report_type.label }}</label>
+                                            {{ form.report_type }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="{{ form.frequency.id_for_label }}">{{ form.frequency.label }}</label>
+                                            {{ form.frequency }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Timing -->
+                        <div class="card border-left-warning shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Schedule Timing</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}</label>
+                                            {{ form.start_date }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
+                                            {{ form.end_date }}
+                                            {% if form.end_date.help_text %}
+                                            <small class="form-text text-muted">{{ form.end_date.help_text }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.scheduled_time.id_for_label }}">{{ form.scheduled_time.label }}</label>
+                                            {{ form.scheduled_time }}
+                                            {% if form.scheduled_time.help_text %}
+                                            <small class="form-text text-muted">{{ form.scheduled_time.help_text }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recipients -->
+                        <div class="card border-left-success shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Recipients</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="{{ form.recipients.id_for_label }}">{{ form.recipients.label }}</label>
+                                    {{ form.recipients }}
+                                    {% if form.recipients.help_text %}
+                                    <small class="form-text text-muted">{{ form.recipients.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Configuration -->
+                        <div class="card border-left-info shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Email Configuration</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    {{ form.send_email }}
+                                    <label class="form-check-label" for="{{ form.send_email.id_for_label }}">
+                                        {{ form.send_email.label }}
+                                    </label>
+                                </div>
+                                
+                                <div id="emailConfig" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="{{ form.email_subject.id_for_label }}">{{ form.email_subject.label }}</label>
+                                        {{ form.email_subject }}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="{{ form.email_message.id_for_label }}">{{ form.email_message.label }}</label>
+                                        {{ form.email_message }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parameters -->
+                        <div class="card border-left-secondary shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Report Parameters</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="{{ form.parameters.id_for_label }}">{{ form.parameters.label }}</label>
+                                    {{ form.parameters }}
+                                    <small class="form-text text-muted">Enter JSON parameters for the report (optional)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Save Schedule
+                            </button>
+                            <a href="{% url 'reports:schedule_list' %}" class="btn btn-secondary btn-lg">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Information Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> About Scheduled Reports
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p>Scheduled reports automatically generate and distribute reports on a set schedule.</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-sync-alt text-primary mr-2"></i>
+                            <strong>Automatic Generation</strong> - Reports are generated automatically
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-users text-success mr-2"></i>
+                            <strong>Multiple Recipients</strong> - Send to multiple users automatically
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-envelope text-warning mr-2"></i>
+                            <strong>Email Delivery</strong> - Reports delivered via email
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-cog text-info mr-2"></i>
+                            <strong>Custom Parameters</strong> - Set specific report parameters
+                        </li>
+                    </ul>
+                    <hr>
+                    <h6 class="font-weight-bold">Available Variables for Email:</h6>
+                    <div class="mt-2">
+                        <code class="d-block mb-1">{report_name}</code>
+                        <code class="d-block mb-1">{date}</code>
+                        <code class="d-block mb-1">{period_start}</code>
+                        <code class="d-block">{period_end}</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Preview -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar-check"></i> Schedule Preview
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if schedule %}
+                    <div class="alert alert-info">
+                        <strong>Next Run:</strong>
+                        {% if schedule.next_run %}
+                        {{ schedule.next_run|date:"M d, Y H:i" }}
+                        {% else %}
+                        <em>Will be calculated after save</em>
+                        {% endif %}
+                    </div>
+                    <dl class="row small">
+                        <dt class="col-sm-5">Created:</dt>
+                        <dd class="col-sm-7">{{ schedule.created_at|date:"M d, Y" }}</dd>
+                        
+                        <dt class="col-sm-5">Created By:</dt>
+                        <dd class="col-sm-7">{{ schedule.created_by.get_full_name }}</dd>
+                        
+                        {% if schedule.last_run %}
+                        <dt class="col-sm-5">Last Run:</dt>
+                        <dd class="col-sm-7">{{ schedule.last_run|date:"M d, Y H:i" }}</dd>
+                        {% endif %}
+                        
+                        {% if schedule.generated_reports.count %}
+                        <dt class="col-sm-5">Reports Generated:</dt>
+                        <dd class="col-sm-7">{{ schedule.generated_reports.count }}</dd>
+                        {% endif %}
+                    </dl>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-calendar-plus fa-3x mb-3"></i>
+                        <p>Schedule details will appear here after saving</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show/hide email configuration
+    document.getElementById('id_send_email').addEventListener('change', function() {
+        const emailConfig = document.getElementById('emailConfig');
+        emailConfig.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('id_send_email').dispatchEvent(new Event('change'));
+    });
+</script>
+{% endblock %}

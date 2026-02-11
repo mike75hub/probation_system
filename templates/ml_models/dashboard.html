@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ML Dashboard - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">ML Dashboard</h1>
+            <p class="text-muted">Overview of machine learning activities</p>
+        </div>
+        <div>
+            <a href="{% url 'ml_models:train_model' %}" class="btn btn-primary me-2">
+                <i class="fas fa-brain me-2"></i>Train Model
+            </a>
+            <a href="{% url 'ml_models:make_prediction' %}" class="btn btn-success">
+                <i class="fas fa-bolt me-2"></i>Make Prediction
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <!-- Models Statistics -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Models
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_models }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-robot fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-success small">
+                            <i class="fas fa-arrow-up me-1"></i>{{ active_models }} Active
+                        </span>
+                        <span class="text-danger small ms-3">
+                            <i class="fas fa-rocket me-1"></i>{{ deployed_models }} Deployed
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Jobs Statistics -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Training Jobs
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_jobs }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-success small">
+                            <i class="fas fa-check me-1"></i>{{ completed_jobs }} Completed
+                        </span>
+                        <span class="text-danger small ms-3">
+                            <i class="fas fa-times me-1"></i>{{ failed_jobs }} Failed
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predictions Statistics -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Predictions
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_predictions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bolt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-info small">
+                            <i class="fas fa-clock me-1"></i>{{ recent_predictions }} Recent
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Statistics -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Average Accuracy
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_accuracy|floatformat:1 }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-warning small">
+                            <i class="fas fa-chart-bar me-1"></i>Model Performance
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Models -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Models</h6>
+                    <a href="{% url 'ml_models:model_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_models %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Algorithm</th>
+                                    <th>Status</th>
+                                    <th>Accuracy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model in recent_models %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'ml_models:model_detail' model.pk %}" class="small">
+                                            {{ model.name|truncatechars:20 }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary small">{{ model.get_algorithm_display|truncatechars:15 }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ model.get_status_color }} small">
+                                            {{ model.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if model.accuracy %}
+                                        <span class="small">{{ model.accuracy|floatformat:2 }}</span>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-robot fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No models yet</p>
+                        <a href="{% url 'ml_models:train_model' %}" class="btn btn-sm btn-primary">
+                            Train First Model
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Predictions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-success">Recent Predictions</h6>
+                    <a href="{% url 'ml_models:prediction_list' %}" class="btn btn-sm btn-outline-success">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_predictions_list %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Model</th>
+                                    <th>Prediction</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prediction in recent_predictions_list %}
+                                <tr>
+                                    <td class="small">{{ prediction.prediction_time|date:"H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'ml_models:model_detail' prediction.ml_model.pk %}" class="small">
+                                            {{ prediction.ml_model.name|truncatechars:15 }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if prediction.predicted_class %}
+                                        <span class="badge bg-primary small">{{ prediction.predicted_class|truncatechars:15 }}</span>
+                                        {% elif prediction.predicted_value %}
+                                        <span class="small">{{ prediction.predicted_value|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prediction.prediction_confidence %}
+                                        <div class="progress" style="height: 4px;">
+                                            <div class="progress-bar bg-{% if prediction.prediction_confidence > 0.8 %}success{% elif prediction.prediction_confidence > 0.6 %}warning{% else %}danger{% endif %}" 
+                                                 style="width: {% widthratio prediction.prediction_confidence 1 100 %}%">
+                                            </div>
+                                        </div>
+                                        <small>{{ prediction.prediction_confidence|floatformat:2 }}</small>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-bolt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No predictions yet</p>
+                        <a href="{% url 'ml_models:make_prediction' %}" class="btn btn-sm btn-success">
+                            Make First Prediction
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Training Jobs -->
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-warning">Recent Training Jobs</h6>
+                    <a href="{% url 'ml_models:trainingjob_list' %}" class="btn btn-sm btn-outline-warning">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Model</th>
+                                    <th>Status</th>
+                                    <th>Started</th>
+                                    <th>Duration</th>
+                                    <th>Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in recent_jobs %}
+                                <tr>
+                                    <td class="small">{{ job.job_id|truncatechars:15 }}</td>
+                                    <td>
+                                        {% if job.ml_model %}
+                                        <a href="{% url 'ml_models:model_detail' job.ml_model.pk %}" class="small">
+                                            {{ job.ml_model.name|truncatechars:20 }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ job.get_status_color }} small">
+                                            {{ job.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="small">{{ job.created_at|date:"M d, H:i" }}</td>
+                                    <td class="small">
+                                        {% if job.training_time_seconds %}
+                                        {{ job.training_time_seconds|floatformat:0 }}s
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 4px;">
+                                            <div class="progress-bar bg-{{ job.get_status_color }}" 
+                                                 style="width: {{ job.progress_percentage }}%">
+                                            </div>
+                                        </div>
+                                        <small>{{ job.progress_percentage }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No training jobs yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'datasets:dataset_upload' %}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="fas fa-upload fa-2x mb-2"></i>
+                                <h6>Upload Dataset</h6>
+                                <small class="text-muted">Add new training data</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'ml_models:train_model' %}" class="btn btn-outline-success w-100 py-3">
+                                <i class="fas fa-brain fa-2x mb-2"></i>
+                                <h6>Train Model</h6>
+                                <small class="text-muted">Create new ML model</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'ml_models:make_prediction' %}" class="btn btn-outline-warning w-100 py-3">
+                                <i class="fas fa-bolt fa-2x mb-2"></i>
+                                <h6>Make Prediction</h6>
+                                <small class="text-muted">Use deployed models</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'ml_models:batch_prediction' %}" class="btn btn-outline-info w-100 py-3">
+                                <i class="fas fa-file-csv fa-2x mb-2"></i>
+                                <h6>Batch Predict</h6>
+                                <small class="text-muted">Predict from CSV file</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

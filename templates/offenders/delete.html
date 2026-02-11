@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Offender - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Confirm Deactivation</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>Warning!</h5>
+                        <p class="mb-0">
+                            You are about to deactivate offender <strong>{{ offender.offender_id }} - {{ offender.get_full_name }}</strong>.
+                            This action will mark the offender as inactive but will not delete their records.
+                        </p>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>Offender Details</h6>
+                            <p class="mb-1"><strong>ID:</strong> {{ offender.offender_id }}</p>
+                            <p class="mb-1"><strong>Name:</strong> {{ offender.get_full_name }}</p>
+                            <p class="mb-1"><strong>Active Cases:</strong> {{ offender.cases.count }}</p>
+                            <p class="mb-0"><strong>Risk Level:</strong> 
+                                <span class="badge bg-{{ offender.get_risk_color }}">
+                                    {{ offender.get_risk_level_display }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'offender_detail' offender.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-user-slash me-2"></i>Confirm Deactivation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

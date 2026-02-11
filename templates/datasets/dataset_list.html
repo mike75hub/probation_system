@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Datasets - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Datasets</h1>
+            <p class="text-muted">Manage and analyze datasets for ML training</p>
+        </div>
+        <div>
+            <a href="{% url 'datasets:dataset_upload' %}" class="btn btn-primary">
+                <i class="fas fa-upload me-2"></i>Upload Dataset
+            </a>
+            <a href="{% url 'datasets:source_create' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-plus me-2"></i>Add Source
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Datasets
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_datasets }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Size
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_size_gb }} GB</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hdd fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Ready Datasets
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% for stat in datasets_by_status %}{% if stat.status == 'ready' %}{{ stat.count }}{% endif %}{% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Processing
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% for stat in datasets_by_status %}{% if stat.status == 'processing' %}{{ stat.count }}{% endif %}{% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-sync fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Dataset Type</label>
+                    <select name="type" id="type" class="form-select">
+                        <option value="">All Types</option>
+                        <option value="offender_profile" {% if request.GET.type == 'offender_profile' %}selected{% endif %}>Offender Profiles</option>
+                        <option value="risk_assessment" {% if request.GET.type == 'risk_assessment' %}selected{% endif %}>Risk Assessment</option>
+                        <option value="recidivism" {% if request.GET.type == 'recidivism' %}selected{% endif %}>Recidivism Data</option>
+                        <option value="program_effectiveness" {% if request.GET.type == 'program_effectiveness' %}selected{% endif %}>Program Effectiveness</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="uploaded" {% if request.GET.status == 'uploaded' %}selected{% endif %}>Uploaded</option>
+                        <option value="processing" {% if request.GET.status == 'processing' %}selected{% endif %}>Processing</option>
+                        <option value="ready" {% if request.GET.status == 'ready' %}selected{% endif %}>Ready</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Search by name or description" value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Datasets Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">All Datasets</h6>
+            <span class="badge bg-primary rounded-pill">{{ datasets|length }} datasets</span>
+        </div>
+        <div class="card-body">
+            {% if datasets %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Rows × Columns</th>
+                            <th>Size</th>
+                            <th>Quality Score</th>
+                            <th>Uploaded</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dataset in datasets %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'datasets:dataset_detail' dataset.pk %}" class="fw-bold">
+                                    {{ dataset.name }}
+                                </a>
+                                <div class="small text-muted">{{ dataset.description|truncatechars:50 }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ dataset.get_dataset_type_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ dataset.get_status_color }}">
+                                    {{ dataset.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ dataset.row_count }} × {{ dataset.column_count }}</td>
+                            <td>{{ dataset.get_file_size_display }}</td>
+                            <td>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-{% if dataset.data_quality_score > 80 %}success{% elif dataset.data_quality_score > 60 %}warning{% else %}danger{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ dataset.data_quality_score }}%"
+                                         aria-valuenow="{{ dataset.data_quality_score }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small>{{ dataset.data_quality_score|floatformat:1 }}%</small>
+                            </td>
+                            <td>
+                                <div class="small">{{ dataset.upload_date|date:"M d, Y" }}</div>
+                                <div class="small text-muted">by {{ dataset.uploaded_by.get_full_name|default:dataset.uploaded_by.username }}</div>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'datasets:dataset_detail' dataset.pk %}" 
+                                       class="btn btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'datasets:dataset_update' dataset.pk %}" 
+                                       class="btn btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'datasets:dataset_download' dataset.pk %}" 
+                                       class="btn btn-outline-success" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-database fa-4x text-muted mb-3"></i>
+                <h5>No datasets found</h5>
+                <p class="text-muted">Upload your first dataset to get started</p>
+                <a href="{% url 'datasets:dataset_upload' %}" class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Upload Dataset
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Auto-submit filters on change
+    $('#type, #status').change(function() {
+        $(this).closest('form').submit();
+    });
+});
+</script>
+{% endblock %}

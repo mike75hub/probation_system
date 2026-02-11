@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Offenders - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-users me-2"></i>Offenders Management
+        </h1>
+        {% if user.is_admin or user.is_officer %}
+        <a href="{% url 'offenders:offender_create' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Add New Offender
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Offenders
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_offenders }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Offenders
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_offenders }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                High Risk
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ high_risk_offenders }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-left-info">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Avg. Age
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">32</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="fas fa-search me-2"></i>Search & Filter</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ search_form.search }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.risk_level }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.status }}
+                </div>
+                <div class="col-md-3">
+                    {{ search_form.county }}
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Offenders Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="fas fa-list me-2"></i>Offenders List</h5>
+            <div>
+                <span class="badge bg-secondary">{{ offenders.paginator.count }} total</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Offender ID</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>County</th>
+                            <th>Risk Level</th>
+                            <th>Status</th>
+                            <th>Last Assessment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for offender in offenders %}
+                        <tr>
+                            <td>
+                                <strong>{{ offender.offender_id }}</strong>
+                            </td>
+                            <td>
+                                {{ offender.get_full_name }}
+                                {% if offender.email %}
+                                <br><small class="text-muted">{{ offender.email }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ offender.age }}</td>
+                            <td>{{ offender.county }}</td>
+                            <td>
+                                <span class="badge bg-{{ offender.get_risk_color }}">
+                                    {{ offender.get_risk_level_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if offender.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% with offender.assessments.first as latest %}
+                                    {% if latest %}
+                                    {{ latest.assessment_date|date:"Y-m-d" }}
+                                    <br><small>Score: {{ latest.overall_risk_score|default:"N/A" }}</small>
+                                    {% else %}
+                                    <span class="text-muted">No assessment</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'offenders:offender_detail' offender.pk %}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.is_admin or user.is_officer %}
+                                    <a href="{% url 'offenders:offender_update' offender.pk %}" 
+                                       class="btn btn-sm btn-outline-warning" 
+                                       title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if user.is_admin %}
+                                    <a href="{% url 'offenders:assessment_create' offender.pk %}" 
+                                       class="btn btn-sm btn-outline-info" 
+                                       title="New Assessment">
+                                        <i class="fas fa-clipboard-check"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-2x mb-2"></i>
+                                    <p class="mb-0">No offenders found.</p>
+                                    {% if user.is_admin or user.is_officer %}
+                                    <a href="{% url 'offenders:offender_create' %}" class="btn btn-primary mt-2">
+                                        <i class="fas fa-user-plus me-2"></i>Add First Offender
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if offenders.paginator.num_pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if offenders.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ offenders.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in offenders.paginator.page_range %}
+                        {% if offenders.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > offenders.number|add:'-3' and num < offenders.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if offenders.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ offenders.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Generate Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Generate Report</h1>
+        <a href="{% url 'reports:dashboard' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Report Form Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Report Parameters</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="reportForm">
+                        {% csrf_token %}
+                        
+                        <!-- Report Type -->
+                        <div class="form-group">
+                            <label for="{{ form.report_type.id_for_label }}">{{ form.report_type.label }}</label>
+                            {{ form.report_type }}
+                            {% if form.report_type.help_text %}
+                            <small class="form-text text-muted">{{ form.report_type.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Time Period -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.period.id_for_label }}">{{ form.period.label }}</label>
+                                    {{ form.period }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Output Format -->
+                                <div class="form-group">
+                                    <label for="{{ form.format.id_for_label }}">{{ form.format.label }}</label>
+                                    {{ form.format }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom Date Range (hidden by default) -->
+                        <div id="customDateRange" class="row" style="display: none;">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.date_from.id_for_label }}">{{ form.date_from.label }}</label>
+                                    {{ form.date_from }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.date_to.id_for_label }}">{{ form.date_to.label }}</label>
+                                    {{ form.date_to }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="card border-left-primary shadow mb-4">
+                            <div class="card-header py-2">
+                                <h6 class="m-0 font-weight-bold text-primary">Filters (Optional)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.officer.id_for_label }}">{{ form.officer.label }}</label>
+                                            {{ form.officer }}
+                                            {% if form.officer.help_text %}
+                                            <small class="form-text text-muted">{{ form.officer.help_text }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.offender.id_for_label }}">{{ form.offender.label }}</label>
+                                            {{ form.offender }}
+                                            {% if form.offender.help_text %}
+                                            <small class="form-text text-muted">{{ form.offender.help_text }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
+                                            {{ form.location }}
+                                            {% if form.location.help_text %}
+                                            <small class="form-text text-muted">{{ form.location.help_text }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    {{ form.include_charts }}
+                                    <label class="form-check-label" for="{{ form.include_charts.id_for_label }}">
+                                        {{ form.include_charts.label }}
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    {{ form.include_details }}
+                                    <label class="form-check-label" for="{{ form.include_details.id_for_label }}">
+                                        {{ form.include_details.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    {{ form.send_email }}
+                                    <label class="form-check-label" for="{{ form.send_email.id_for_label }}">
+                                        {{ form.send_email.label }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-cog fa-spin d-none" id="loadingSpinner"></i>
+                                <i class="fas fa-file-alt"></i> Generate Report
+                            </button>
+                            <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Information Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> Report Generation Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success mr-2"></i>
+                            <strong>PDF Format:</strong> Best for printing and sharing
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success mr-2"></i>
+                            <strong>Excel Format:</strong> Best for data analysis
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success mr-2"></i>
+                            <strong>CSV Format:</strong> Best for importing into other systems
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success mr-2"></i>
+                            <strong>HTML Format:</strong> Best for viewing in browser
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-clock text-warning mr-2"></i>
+                            Large reports may take a few minutes to generate
+                        </li>
+                    </ul>
+                    <hr>
+                    <h6 class="font-weight-bold">Available Report Types:</h6>
+                    <div class="mt-2">
+                        {% for report_type in report_types %}
+                        <span class="badge badge-{{ report_type.category|yesno:'primary,success,warning,info,secondary' }} mb-1">
+                            {{ report_type.name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{% url 'reports:compliance_report' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-check-circle text-success mr-2"></i>
+                            Generate Compliance Report
+                        </a>
+                        <a href="{% url 'reports:performance_report' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-line text-warning mr-2"></i>
+                            Generate Performance Report
+                        </a>
+                        <a href="{% url 'reports:schedule_list' %}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-calendar-alt text-info mr-2"></i>
+                            Manage Scheduled Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show/hide custom date range
+    document.getElementById('id_period').addEventListener('change', function() {
+        const customDateRange = document.getElementById('customDateRange');
+        if (this.value === 'custom') {
+            customDateRange.style.display = 'flex';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    });
+
+    // Show loading spinner on form submit
+    document.getElementById('reportForm').addEventListener('submit', function() {
+        const spinner = document.getElementById('loadingSpinner');
+        spinner.classList.remove('d-none');
+    });
+
+    // Initialize form with default values
+    document.addEventListener('DOMContentLoaded', function() {
+        // Trigger change event to show/hide date range
+        document.getElementById('id_period').dispatchEvent(new Event('change'));
+    });
+</script>
+{% endblock %}

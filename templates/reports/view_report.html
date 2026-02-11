@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ report.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ report.title }}</h1>
+        <div>
+            <a href="{% url 'reports:download_report' report.id %}" class="d-none d-sm-inline-block btn btn-success shadow-sm">
+                <i class="fas fa-download fa-sm text-white-50"></i> Download Report
+            </a>
+            <a href="{% url 'reports:report_list' %}" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Details -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Report Preview Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Report Preview</h6>
+                    <span class="badge badge-{{ report.status == 'completed'|yesno:'success,warning,danger,secondary' }}">
+                        {{ report.get_status_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% if report.status == 'completed' %}
+                        {% if report.file_format == 'html' %}
+                            <!-- HTML Preview -->
+                            <div class="embed-responsive embed-responsive-16by9">
+                                <iframe src="{% url 'reports:view_report' report.id %}" class="embed-responsive-item"></iframe>
+                            </div>
+                        {% elif report.file_format == 'pdf' %}
+                            <!-- PDF Preview -->
+                            <div class="text-center">
+                                <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                                <h4>PDF Report</h4>
+                                <p>Click download to view this PDF report</p>
+                                <p class="text-muted">{{ report.get_file_size_display }}</p>
+                            </div>
+                        {% elif report.file_format == 'excel' %}
+                            <!-- Excel Preview -->
+                            <div class="text-center">
+                                <i class="fas fa-file-excel fa-5x text-success mb-3"></i>
+                                <h4>Excel Report</h4>
+                                <p>Click download to view this Excel spreadsheet</p>
+                                <p class="text-muted">{{ report.get_file_size_display }}</p>
+                            </div>
+                        {% elif report.file_format == 'csv' %}
+                            <!-- CSV Preview -->
+                            <div class="text-center">
+                                <i class="fas fa-file-csv fa-5x text-info mb-3"></i>
+                                <h4>CSV Report</h4>
+                                <p>Click download to view this CSV file</p>
+                                <p class="text-muted">{{ report.get_file_size_display }}</p>
+                            </div>
+                        {% endif %}
+                    {% elif report.status == 'generating' %}
+                        <!-- Generating -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <h4>Generating Report</h4>
+                            <p class="text-muted">Please wait while the report is being generated...</p>
+                        </div>
+                    {% elif report.status == 'failed' %}
+                        <!-- Failed -->
+                        <div class="text-center py-5">
+                            <i class="fas fa-exclamation-triangle fa-5x text-danger mb-3"></i>
+                            <h4>Report Generation Failed</h4>
+                            <p class="text-danger">{{ report.error_message|default:"An error occurred while generating the report" }}</p>
+                            <a href="{% url 'reports:generate' %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-redo mr-2"></i>Try Again
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Information Sidebar -->
+        <div class="col-lg-4">
+            <!-- Report Details Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> Report Details
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-5">Report Type:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge badge-secondary">{{ report.report_type.name }}</span>
+                        </dd>
+
+                        <dt class="col-sm-5">Category:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge badge-primary">{{ report.report_type.get_category_display }}</span>
+                        </dd>
+
+                        <dt class="col-sm-5">Period:</dt>
+                        <dd class="col-sm-7">
+                            {{ report.period_start|date:"M d, Y" }} to {{ report.period_end|date:"M d, Y" }}
+                        </dd>
+
+                        <dt class="col-sm-5">Generated By:</dt>
+                        <dd class="col-sm-7">{{ report.generated_by.get_full_name }}</dd>
+
+                        <dt class="col-sm-5">Generation Date:</dt>
+                        <dd class="col-sm-7">{{ report.generation_date|date:"M d, Y H:i" }}</dd>
+
+                        <dt class="col-sm-5">Format:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge badge-info">{{ report.get_file_format_display|upper }}</span>
+                        </dd>
+
+                        <dt class="col-sm-5">File Size:</dt>
+                        <dd class="col-sm-7">{{ file_size_display }}</dd>
+
+                        <dt class="col-sm-5">Downloads:</dt>
+                        <dd class="col-sm-7">
+                            <i class="fas fa-download mr-1"></i>{{ report.download_count }}
+                            {% if report.last_downloaded %}
+                            <br><small class="text-muted">Last: {{ report.last_downloaded|date:"M d, Y H:i" }}</small>
+                            {% endif %}
+                        </dd>
+
+                        {% if report.schedule %}
+                        <dt class="col-sm-5">Scheduled:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge badge-warning">Yes</span>
+                            <br><small>{{ report.schedule.name }}</small>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cog"></i> Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'reports:download_report' report.id %}" class="btn btn-success btn-block">
+                            <i class="fas fa-download mr-2"></i>Download Report
+                        </a>
+                        
+                        {% if report.status == 'completed' %}
+                        <a href="{% url 'reports:generate' %}" class="btn btn-primary btn-block">
+                            <i class="fas fa-redo mr-2"></i>Regenerate Similar
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'reports:delete_report' report.id %}" class="btn btn-danger btn-block">
+                            <i class="fas fa-trash mr-2"></i>Delete Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Parameters -->
+            {% if report.parameters %}
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-sliders-h"></i> Parameters Used
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <strong>Period:</strong> {{ report.parameters.period|title }}<br>
+                        
+                        {% if report.parameters.filters %}
+                            {% if report.parameters.filters.officer %}
+                            <strong>Officer Filter:</strong> {{ report.parameters.filters.officer }}<br>
+                            {% endif %}
+                            
+                            {% if report.parameters.filters.offender %}
+                            <strong>Offender Filter:</strong> {{ report.parameters.filters.offender }}<br>
+                            {% endif %}
+                            
+                            {% if report.parameters.filters.location %}
+                            <strong>Location Filter:</strong> {{ report.parameters.filters.location }}<br>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if report.parameters.include_charts %}
+                        <span class="badge badge-success">Charts Included</span>
+                        {% endif %}
+                        
+                        {% if report.parameters.include_details %}
+                        <span class="badge badge-info">Details Included</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

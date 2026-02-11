@@ -1,0 +1,185 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Probation System{% endblock %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+{% block page_subtitle %}Welcome back, {{ user.get_full_name|default:user.username }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4">
+    <!-- Welcome Card -->
+    <div class="col-12">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="card-title">Welcome to Probation Management System</h2>
+                        <p class="card-text">
+                            {% if user.is_superuser %}
+                                You are logged in as a system administrator. You have full access to all system features.
+                            {% elif user.role == 'officer' %}
+                                Manage your caseload, track offender compliance, and generate reports.
+                            {% elif user.role == 'offender' %}
+                                Track your probation progress, view requirements, and communicate with your officer.
+                            {% else %}
+                                Welcome to the probation management system.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <i class="bi bi-speedometer2 stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Offenders
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" data-stat="total_offenders">
+                            {{ quick_stats.total_offenders|default:"0" }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Active Cases
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" data-stat="active_cases">
+                            {{ quick_stats.active_cases|default:"0" }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-folder fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            High Risk
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" data-stat="high_risk">
+                            {{ quick_stats.high_risk|default:"0" }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Compliance Rate
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" data-stat="compliance_rate">
+                            {{ quick_stats.compliance_rate|default:"0" }}%
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Role-specific content -->
+{% if user.is_superuser or user.role == 'admin' %}
+    {% include 'dashboard/partials/admin_dashboard.html' %}
+{% elif user.role == 'officer' %}
+    {% include 'dashboard/partials/officer_dashboard.html' %}
+{% elif user.role == 'offender' %}
+    {% include 'dashboard/partials/offender_dashboard.html' %}
+{% elif user.role == 'judiciary' %}
+    {% include 'dashboard/partials/judiciary_dashboard.html' %}
+{% else %}
+    {% include 'dashboard/partials/default_dashboard.html' %}
+{% endif %}
+
+<!-- Recent Activity -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="widget-card">
+            <div class="widget-header">
+                <h5 class="widget-title">
+                    <i class="bi bi-clock-history me-2"></i>Recent Activity
+                </h5>
+                <p class="widget-subtitle">Your recent actions in the system</p>
+            </div>
+            <div class="widget-body">
+                <div id="activity-feed">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon bg-{{ activity.severity|default:'info' }}">
+                            <i class="bi {{ activity.icon|default:'bi-circle' }} text-white"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-text">
+                                {{ activity.description }}
+                            </div>
+                            <div class="activity-time">
+                                {{ activity.created_at|timesince }} ago
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fa-3x mb-3"></i>
+                        <p>No recent activity</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="text-end mt-3">
+                    <a href="{% url 'dashboard:activity_feed' %}" class="btn btn-sm btn-outline-primary">
+                        View All Activity
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div class="loading-spinner">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Refreshing data...</p>
+</div>
+{% endblock %}
