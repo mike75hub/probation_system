@@ -36,10 +36,20 @@ class ModelTrainer:
         
         trainer_func = self.models[algorithm]
         return trainer_func(X_train, y_train, X_val, y_val, **params)
+
+    def _resolve_problem_type(self, y_train, model_type=None):
+        """Resolve whether training should be classification or regression."""
+        if model_type in ('classification', 'regression'):
+            return model_type == 'classification'
+        return len(np.unique(y_train)) < 10
     
     def _train_logistic_regression(self, X_train, y_train, X_val=None, y_val=None, **params):
         """Train Logistic Regression model."""
         from sklearn.linear_model import LogisticRegression
+
+        model_type = params.get('model_type')
+        if model_type == 'regression':
+            raise ValueError("Logistic Regression is only valid for classification model type.")
         
         model = LogisticRegression(
             C=params.get('C', 1.0),
@@ -63,7 +73,7 @@ class ModelTrainer:
         """Train Random Forest model."""
         from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
         
-        is_classification = len(np.unique(y_train)) < 10
+        is_classification = self._resolve_problem_type(y_train, params.get('model_type'))
         
         if is_classification:
             model = RandomForestClassifier(
@@ -101,7 +111,7 @@ class ModelTrainer:
         """Train Decision Tree model."""
         from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
         
-        is_classification = len(np.unique(y_train)) < 10
+        is_classification = self._resolve_problem_type(y_train, params.get('model_type'))
         
         if is_classification:
             model = DecisionTreeClassifier(
@@ -136,7 +146,7 @@ class ModelTrainer:
         except ImportError:
             raise ImportError("XGBoost is not installed. Install it with: pip install xgboost")
         
-        is_classification = len(np.unique(y_train)) < 10
+        is_classification = self._resolve_problem_type(y_train, params.get('model_type'))
         
         if is_classification:
             model = xgb.XGBClassifier(
@@ -181,7 +191,7 @@ class ModelTrainer:
         """Train Support Vector Machine model."""
         from sklearn.svm import SVC, SVR
         
-        is_classification = len(np.unique(y_train)) < 10
+        is_classification = self._resolve_problem_type(y_train, params.get('model_type'))
         
         if is_classification:
             model = SVC(

@@ -313,6 +313,7 @@ def train_model(request):
                     algorithm=algorithm,
                     purpose=f"Predict {target_column}",
                     trained_by=request.user,
+                    training_dataset=dataset,
                     status='training',
                     target_column=target_column
                 )
@@ -352,13 +353,62 @@ def train_model(request):
                             df = pd.read_csv(dataset.original_file.path)
                         else:
                             df = pd.read_excel(dataset.original_file.path)
-                        
+
+                        if target_column not in df.columns:
+                            raise ValueError(f"Target column '{target_column}' was not found in the dataset.")
+
                         # Split features and target
-                        X = df.drop(columns=[target_column])
-                        y = df[target_column]
-                        
-                        # Train model
-                        model_result = trainer.train_model(algorithm, X, y)
+                        X = df.drop(columns=[target_column]).copy()
+                        y = df[target_column].copy()
+
+                        # Clean infinities and all-null columns
+                        X = X.replace([float('inf'), float('-inf')], pd.NA)
+                        X = X.dropna(axis=1, how='all')
+                        if X.empty:
+                            raise ValueError("No usable feature columns found after preprocessing.")
+
+                        # Fill missing values in features
+                        numeric_cols = X.select_dtypes(include=['number']).columns
+                        categorical_cols = X.select_dtypes(exclude=['number']).columns
+
+                        if len(numeric_cols) > 0:
+                            X[numeric_cols] = X[numeric_cols].apply(lambda col: col.fillna(col.median()))
+                        if len(categorical_cols) > 0:
+                            X[categorical_cols] = X[categorical_cols].astype(str).fillna('missing')
+
+                        # One-hot encode categorical feature columns
+                        X = pd.get_dummies(X, columns=list(categorical_cols), drop_first=False, dtype=float)
+
+                        # Prepare target by selected model type
+                        if model_type == 'regression':
+                            y = pd.to_numeric(y, errors='coerce')
+                            valid_rows = y.notna()
+                            X = X.loc[valid_rows]
+                            y = y.loc[valid_rows]
+                            if y.empty:
+                                raise ValueError("Target column has no numeric values for regression.")
+                        else:
+                            y = y.astype(str).fillna('missing')
+                            valid_rows = y.notna()
+                            X = X.loc[valid_rows]
+                            y = y.loc[valid_rows]
+                            if y.nunique() < 2:
+                                raise ValueError("Classification target must have at least 2 classes.")
+
+                        if X.empty:
+                            raise ValueError("No rows available for training after preprocessing.")
+
+                        # Persist the transformed feature list used by the model
+                        ml_model.feature_columns = X.columns.tolist()
+                        ml_model.save(update_fields=['feature_columns'])
+
+                        # Train model using selected model type
+                        model_result = trainer.train_model(
+                            algorithm,
+                            X,
+                            y,
+                            model_type=model_type
+                        )
                         
                         # Save model
                         model_dir = os.path.join('media/ml_models', datetime.now().strftime('%Y/%m/%d'))

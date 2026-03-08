@@ -23,8 +23,10 @@ class MLModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filter datasets by type
-        self.fields['training_dataset'].queryset = Dataset.objects.filter(status='ready')
+        # Show datasets that are available for use (exclude archived/error only)
+        self.fields['training_dataset'].queryset = Dataset.objects.exclude(
+            status__in=[Dataset.Status.ARCHIVED, Dataset.Status.ERROR]
+        ).order_by('-upload_date')
         
         # Add help text
         self.fields['hyperparameters'].help_text = 'Enter hyperparameters in JSON format'
@@ -52,8 +54,10 @@ class TrainingJobForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Filter datasets by status
-        self.fields['dataset'].queryset = Dataset.objects.filter(status='ready')
+        # Show datasets that are available for use (exclude archived/error only)
+        self.fields['dataset'].queryset = Dataset.objects.exclude(
+            status__in=[Dataset.Status.ARCHIVED, Dataset.Status.ERROR]
+        ).order_by('-upload_date')
     
     def clean_parameters(self):
         parameters = self.cleaned_data.get('parameters')
@@ -111,7 +115,7 @@ class ModelTrainingForm(forms.Form):
     
     # Data selection
     dataset = forms.ModelChoiceField(
-        queryset=Dataset.objects.filter(status='ready'),
+        queryset=Dataset.objects.none(),
         help_text="Select the dataset to use for training"
     )
     
@@ -163,6 +167,9 @@ class ModelTrainingForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        self.fields['dataset'].queryset = Dataset.objects.exclude(
+            status__in=[Dataset.Status.ARCHIVED, Dataset.Status.ERROR]
+        ).order_by('-upload_date')
 
 class SinglePredictionForm(forms.Form):
     """Form for making a single prediction."""

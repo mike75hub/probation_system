@@ -56,6 +56,8 @@ class DatasetUploadForm(forms.ModelForm):
         if dataset.original_file:
             dataset.file_size = dataset.original_file.size
             dataset.file_format = dataset.original_file.name.split('.')[-1].lower()
+            if dataset.status == Dataset.Status.DRAFT:
+                dataset.status = Dataset.Status.UPLOADED
         
         if commit:
             dataset.save()

@@ -286,6 +286,7 @@ class Dataset(models.Model):
             missing_cells = sum(self.missing_values_count.values())
             quality = 1 - (missing_cells / total_cells) if total_cells > 0 else 0
             self.data_quality_score = round(quality * 100, 2)
+            self.status = self.Status.READY
             
             self.save()
             return True

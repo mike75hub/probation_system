@@ -17,7 +17,7 @@ def login_view(request):
     # If user is already authenticated, redirect to dashboard
     if request.user.is_authenticated:
         messages.info(request, 'You are already logged in.')
-        return redirect('dashboard')
+        return redirect('accounts:dashboard')
     
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -31,7 +31,7 @@ def login_view(request):
                 messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
                 
                 # Redirect based on user role
-                return redirect('dashboard')
+                return redirect('accounts:dashboard')
             else:
                 messages.error(request, 'Invalid username or password. Please try again.')
         else:
@@ -56,7 +56,7 @@ def logout_view(request):
     else:
         messages.info(request, 'You were not logged in.')
     
-    return redirect('login')
+    return redirect('accounts:login')
 
 @login_required
 def dashboard_view(request):
@@ -142,7 +142,7 @@ def register_view(request):
     """
     if request.user.is_authenticated:
         messages.info(request, 'You are already logged in.')
-        return redirect('dashboard')
+        return redirect('accounts:dashboard')
     
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -156,7 +156,7 @@ def register_view(request):
             # Log the registration
             print(f"New user registered: {user.username} ({user.role})")
             
-            return redirect('dashboard')
+            return redirect('accounts:dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -174,7 +174,7 @@ def profile_view(request):
     """
     if not request.user.is_authenticated:
         messages.error(request, 'Please login to view your profile.')
-        return redirect('login')
+        return redirect('accounts:login')
     
     user = request.user
     
@@ -200,7 +200,7 @@ def profile_view(request):
         
         user.save()
         messages.success(request, 'Profile updated successfully!')
-        return redirect('profile')
+        return redirect('accounts:profile')
     
     context = {
         'user': user,
@@ -224,7 +224,7 @@ def settings_view(request):
         # In a real application, you would save these to a UserSettings model
         # For now, we'll just show a success message
         messages.success(request, 'Settings updated successfully!')
-        return redirect('settings')
+        return redirect('accounts:settings')
     
     context = {
         'user': user,
@@ -256,17 +256,17 @@ def change_password_view(request):
         # Validate current password
         if not request.user.check_password(current_password):
             messages.error(request, 'Current password is incorrect.')
-            return redirect('change_password')
+            return redirect('accounts:change_password')
         
         # Validate new passwords match
         if new_password1 != new_password2:
             messages.error(request, 'New passwords do not match.')
-            return redirect('change_password')
+            return redirect('accounts:change_password')
         
         # Validate password strength (simple check)
         if len(new_password1) < 8:
             messages.error(request, 'Password must be at least 8 characters long.')
-            return redirect('change_password')
+            return redirect('accounts:change_password')
         
         # Set new password
         request.user.set_password(new_password1)
@@ -277,7 +277,7 @@ def change_password_view(request):
         update_session_auth_hash(request, request.user)
         
         messages.success(request, 'Password changed successfully!')
-        return redirect('profile')
+        return redirect('accounts:profile')
     
     context = {
         'title': 'Change Password'
@@ -290,7 +290,7 @@ def users_list_view(request):
     """
     if not request.user.is_authenticated or not request.user.is_admin():
         messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
+        return redirect('accounts:dashboard')
     
     users = User.objects.all().order_by('-date_joined')
     
@@ -324,14 +324,14 @@ def create_user_view(request):
     """
     if not request.user.is_authenticated or not request.user.is_admin():
         messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
+        return redirect('accounts:dashboard')
     
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             messages.success(request, f'User {user.username} created successfully!')
-            return redirect('users_list')
+            return redirect('accounts:users_list')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -349,13 +349,13 @@ def user_detail_view(request, user_id):
     """
     if not request.user.is_authenticated or not request.user.is_admin():
         messages.error(request, 'Access denied. Admin privileges required.')
-        return redirect('dashboard')
+        return redirect('accounts:dashboard')
     
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
         messages.error(request, 'User not found.')
-        return redirect('users_list')
+        return redirect('accounts:users_list')
     
     if request.method == 'POST':
         # Handle user updates
@@ -368,7 +368,7 @@ def user_detail_view(request, user_id):
         
         user.save()
         messages.success(request, f'User {user.username} updated successfully!')
-        return redirect('user_detail', user_id=user.id)
+        return redirect('accounts:user_detail', user_id=user.id)
     
     context = {
         'target_user': user,
