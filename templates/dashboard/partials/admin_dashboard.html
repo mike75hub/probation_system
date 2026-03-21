@@ -187,7 +187,7 @@
                             {% for offender in recent_offenders %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'offenders:detail' offender.id %}">
+                                    <a href="{% url 'offenders:offender_detail' offender.id %}">
                                         {{ offender.first_name }} {{ offender.last_name }}
                                     </a>
                                 </td>

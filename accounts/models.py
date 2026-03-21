@@ -26,6 +26,11 @@ class User(AbstractUser):
         blank=True,
         verbose_name=_('Phone Number')
     )
+    designation = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name=_('Designation')
+    )
     profile_picture = models.ImageField(
         upload_to='profiles/',
         blank=True,

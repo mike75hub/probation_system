@@ -2,8 +2,10 @@
 Admin configuration for offenders app.
 """
 from django.contrib import admin
+from django.contrib import messages
 from django.utils.html import format_html
 from .models import Offender, Case, Assessment
+from .services import assign_cases_to_officers
 
 class AssessmentInline(admin.TabularInline):
     """Inline display for assessments."""
@@ -118,6 +120,8 @@ class OffenderAdmin(admin.ModelAdmin):
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
     """Admin interface for Cases."""
+
+    actions = ["auto_assign_officers"]
     
     list_display = [
         'case_number',
@@ -237,6 +241,23 @@ class CaseAdmin(admin.ModelAdmin):
         else:
             return format_html('<span class="badge bg-info">{} days</span>', days)
     days_remaining_display.short_description = 'Remaining'
+
+    @admin.action(description="Auto-assign officers to selected cases")
+    def auto_assign_officers(self, request, queryset):
+        result = assign_cases_to_officers(cases=queryset, only_status=Case.Status.ACTIVE)
+        if result.skipped_no_officers:
+            self.message_user(
+                request,
+                "No active officers found to assign.",
+                level=messages.ERROR,
+            )
+            return
+
+        self.message_user(
+            request,
+            f"Assigned officers to {result.assigned} case(s).",
+            level=messages.SUCCESS,
+        )
 
 @admin.register(Assessment)
 class AssessmentAdmin(admin.ModelAdmin):

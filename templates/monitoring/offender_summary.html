@@ -12,7 +12,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{% url 'offenders:offender_list' %}">Offenders</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'offenders:detail' offender.pk %}">{{ offender.get_full_name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'offenders:offender_detail' offender.pk %}">{{ offender.get_full_name }}</a></li>
                     <li class="breadcrumb-item active">Monitoring</li>
                 </ol>
             </nav>
@@ -251,7 +251,7 @@
                         <dd class="col-sm-7">{{ offender.cases.filter.status='active'|length }}</dd>
                     </dl>
                     
-                    <a href="{% url 'offenders:detail' offender.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                    <a href="{% url 'offenders:offender_detail' offender.pk %}" class="btn btn-sm btn-outline-primary w-100">
                         <i class="fas fa-external-link-alt me-1"></i>View Full Profile
                     </a>
                 </div>

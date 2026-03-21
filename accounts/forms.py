@@ -10,7 +10,7 @@ class CustomUserCreationForm(UserCreationForm):
     
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'role', 'phone')
+        fields = ('username', 'email', 'first_name', 'last_name', 'role', 'designation', 'phone')
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,7 +24,16 @@ class CustomUserChangeForm(UserChangeForm):
     
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'role', 'phone', 'profile_picture')
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'designation',
+            'phone',
+            'profile_picture',
+        )
 
 class LoginForm(forms.Form):
     """Login form."""

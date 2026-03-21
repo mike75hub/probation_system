@@ -12,7 +12,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-fe+u_62_1)7x9f4x%$&!t455!td_awsy6$t-gri6nejtj_dh0_'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config(
+    "DEBUG",
+    default=True,
+    cast=lambda v: str(v).strip().lower() in {"1", "true", "yes", "y", "on"},
+)
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -63,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.permissions.add_role_permissions',
             ],
         },
     },

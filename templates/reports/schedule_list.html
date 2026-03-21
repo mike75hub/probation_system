@@ -142,12 +142,21 @@
                                     <a href="{% url 'reports:update_schedule' schedule.id %}" class="btn btn-info" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button class="btn btn-{{ schedule.status == 'active'|yesno:'warning,success' }} toggle-schedule" 
-                                            data-id="{{ schedule.id }}" 
+                                    {% if schedule.status == 'active' %}
+                                    <button class="btn btn-warning toggle-schedule"
+                                            data-id="{{ schedule.id }}"
                                             data-status="{{ schedule.status }}"
-                                            title="{{ schedule.status == 'active'|yesno:'Pause,Activate' }}">
-                                        <i class="fas fa-{{ schedule.status == 'active'|yesno:'pause,play' }}"></i>
+                                            title="Pause">
+                                        <i class="fas fa-pause"></i>
                                     </button>
+                                    {% else %}
+                                    <button class="btn btn-success toggle-schedule"
+                                            data-id="{{ schedule.id }}"
+                                            data-status="{{ schedule.status }}"
+                                            title="Activate">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    {% endif %}
                                     <a href="{% url 'reports:delete_schedule' schedule.id %}" class="btn btn-danger" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </a>

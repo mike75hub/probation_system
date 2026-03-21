@@ -25,7 +25,7 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Program Details</h6>
-                    <span class="badge badge-{{ program.status == 'active'|yesno:'success,secondary,primary,warning' }}">
+                    <span class="badge bg-{{ program.get_status_color }}">
                         {{ program.status|title }}
                     </span>
                 </div>
@@ -38,6 +38,12 @@
                             <div class="mt-4">
                                 <h6 class="font-weight-bold">Program Information</h6>
                                 <table class="table table-sm">
+                                    {% if program.code %}
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Program Code:</td>
+                                        <td><span class="badge badge-light">{{ program.code }}</span></td>
+                                    </tr>
+                                    {% endif %}
                                     <tr>
                                         <td class="font-weight-bold text-gray-800">Program Type:</td>
                                         <td>
@@ -70,6 +76,16 @@
                                         <td class="font-weight-bold text-gray-800">Frequency:</td>
                                         <td>{{ program.frequency|title }}</td>
                                     </tr>
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Delivery:</td>
+                                        <td>{{ program.get_delivery_method_display }}</td>
+                                    </tr>
+                                    {% if program.enrollment_deadline %}
+                                    <tr>
+                                        <td class="font-weight-bold text-gray-800">Enrollment Deadline:</td>
+                                        <td>{{ program.enrollment_deadline|date:"M d, Y" }}</td>
+                                    </tr>
+                                    {% endif %}
                                     <tr>
                                         <td class="font-weight-bold text-gray-800">Target Risk Level:</td>
                                         <td>{{ program.get_target_risk_level_display }}</td>
@@ -286,12 +302,11 @@
                     <div class="mt-4">
                         <h6 class="font-weight-bold">Capacity Usage</h6>
                         <div class="progress" style="height: 25px;">
-                            {% with usage_percentage=enrollments.count|divisibleby:program.max_capacity|floatformat:2 %}
+                            {% widthratio enrollments.count program.max_capacity 100 as usage_percentage %}
                             <div class="progress-bar bg-{% if usage_percentage < 80 %}success{% elif usage_percentage < 95 %}warning{% else %}danger{% endif %}" 
                                  role="progressbar" style="width: {{ usage_percentage }}%;">
                                 {{ enrollments.count }}/{{ program.max_capacity }} ({{ usage_percentage }}%)
                             </div>
-                            {% endwith %}
                         </div>
                     </div>
                     {% endif %}

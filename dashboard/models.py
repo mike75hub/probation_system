@@ -8,6 +8,7 @@ from datetime import timedelta, datetime
 from django.core.cache import cache
 from django.db.models import Avg, Count, Q, Sum, F, ExpressionWrapper, FloatField
 from django.db.models.functions import TruncMonth, TruncYear
+from django.db.models import DateTimeField
 
 class DashboardMetric(models.Model):
     """Stores dashboard metrics for caching with improved performance."""
@@ -252,10 +253,13 @@ class DashboardMetric(models.Model):
         """Calculate pending check-ins for today."""
         try:
             from monitoring.models import CheckIn
-            today = timezone.now().date()
+            now = timezone.now()
+            start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = start + timedelta(days=1)
             return CheckIn.objects.filter(
-                scheduled_date=today,
-                status='pending'
+                scheduled_date__gte=start,
+                scheduled_date__lt=end,
+                status='scheduled'
             ).count()
         except:
             return 0
@@ -265,10 +269,10 @@ class DashboardMetric(models.Model):
         """Calculate overdue check-ins."""
         try:
             from monitoring.models import CheckIn
-            today = timezone.now().date()
+            now = timezone.now()
             return CheckIn.objects.filter(
-                scheduled_date__lt=today,
-                status='pending'
+                scheduled_date__lt=now,
+                status='scheduled'
             ).count()
         except:
             return 0
@@ -280,9 +284,14 @@ class DashboardMetric(models.Model):
             from monitoring.models import CheckIn
             total_checkins = CheckIn.objects.count()
             if total_checkins > 0:
+                one_hour_after_scheduled = ExpressionWrapper(
+                    F("scheduled_date") + timedelta(hours=1),
+                    output_field=DateTimeField(),
+                )
                 completed_on_time = CheckIn.objects.filter(
                     status='completed',
-                    completed_date__lte=F('scheduled_date')
+                    actual_date__isnull=False,
+                    actual_date__lte=one_hour_after_scheduled,
                 ).count()
                 return round((completed_on_time / total_checkins) * 100, 1)
         except:
@@ -296,7 +305,7 @@ class DashboardMetric(models.Model):
             from offenders.models import Offender
             current_month = timezone.now().replace(day=1)
             return Offender.objects.filter(
-                created_at__gte=current_month,
+                date_created__gte=current_month,
                 is_active=True
             ).count()
         except:

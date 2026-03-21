@@ -217,7 +217,11 @@
                         <a href="#" class="list-group-item list-group-item-action">
                             <div class="d-flex w-100 justify-content-between">
                                 <h6 class="mb-1">{{ schedule.name|truncatechars:25 }}</h6>
-                                <small class="text-{{ schedule.status == 'active'|yesno:'success,warning' }}">
+                                {% if schedule.status == 'active' %}
+                                <small class="text-success">
+                                {% else %}
+                                <small class="text-warning">
+                                {% endif %}
                                     {{ schedule.get_status_display }}
                                 </small>
                             </div>

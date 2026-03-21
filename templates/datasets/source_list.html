@@ -70,18 +70,25 @@
                             <td>
                                 <span class="badge bg-secondary">{{ source.datasets.count }}</span>
                             </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="#" class="btn btn-outline-primary" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-outline-secondary" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
+	                            <td>
+	                                <div class="btn-group btn-group-sm">
+	                                    <a href="{% url 'datasets:source_detail' source.pk %}" class="btn btn-outline-primary" title="View">
+	                                        <i class="fas fa-eye"></i>
+	                                    </a>
+	                                    <a href="#" class="btn btn-outline-secondary" title="Edit (Not implemented)">
+	                                        <i class="fas fa-edit"></i>
+	                                    </a>
+	                                    <form method="post" action="{% url 'datasets:source_delete' source.pk %}" class="d-inline"
+	                                          onsubmit="return confirm('Delete data source &quot;{{ source.name|escapejs }}&quot;? You must delete its datasets first.');">
+	                                        {% csrf_token %}
+	                                        <button type="submit" class="btn btn-outline-danger" title="Delete">
+	                                            <i class="fas fa-trash"></i>
+	                                        </button>
+	                                    </form>
+	                                </div>
+	                            </td>
+	                        </tr>
+	                        {% endfor %}
                     </tbody>
                 </table>
             </div>

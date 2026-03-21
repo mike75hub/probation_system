@@ -27,6 +27,10 @@ urlpatterns = [
     path('users/', views.users_list_view, name='users_list'),
     path('users/create/', views.create_user_view, name='create_user'),
     path('users/<int:user_id>/', views.user_detail_view, name='user_detail'),
+
+    # Officer management (admin only)
+    path('officers/', views.officers_list_view, name='officers_list'),
+    path('officers/<int:user_id>/', views.officer_detail_view, name='officer_detail'),
     
     # Password reset (built-in Django views)
     path('password-reset/', 

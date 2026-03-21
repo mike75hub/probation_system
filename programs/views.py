@@ -19,6 +19,10 @@ from .forms import (
     SessionForm, AttendanceForm, ProgramSearchForm
 )
 from offenders.models import Offender
+from accounts.models import User
+from accounts.permissions import (
+    AdminRequiredMixin, NGOOrAdminMixin, OfficerOrAdminMixin
+)
 
 # Program Category Views
 @method_decorator(login_required, name='dispatch')
@@ -27,9 +31,23 @@ class ProgramCategoryListView(ListView):
     template_name = 'programs/category_list.html'
     context_object_name = 'categories'
     
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin, officer, and NGO can view categories
+        if request.user.role not in [User.Role.ADMIN, User.Role.OFFICER, User.Role.NGO]:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Program Categories'
+        categories = context.get("categories", self.get_queryset())
+        categories_with_programs = categories.annotate(pcount=Count("programs")).filter(pcount__gt=0).count()
+        context["categories_with_programs"] = categories_with_programs
+        context["categories_without_programs"] = max(0, categories.count() - categories_with_programs)
+        context["active_categories"] = (
+            categories.filter(programs__status=Program.ProgramStatus.ACTIVE).distinct().count()
+        )
         return context
 
 @method_decorator(login_required, name='dispatch')
@@ -38,6 +56,13 @@ class ProgramCategoryCreateView(CreateView):
     form_class = ProgramCategoryForm
     template_name = 'programs/category_form.html'
     success_url = reverse_lazy('programs:category_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin can create categories
+        if request.user.role != User.Role.ADMIN:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         messages.success(self.request, 'Program category created successfully!')
@@ -53,6 +78,13 @@ class ProgramCategoryUpdateView(UpdateView):
     model = ProgramCategory
     form_class = ProgramCategoryForm
     template_name = 'programs/category_form.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin can update categories
+        if request.user.role != User.Role.ADMIN:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_success_url(self):
         return reverse_lazy('programs:category_list')
@@ -72,6 +104,13 @@ class ProgramCategoryDeleteView(DeleteView):
     template_name = 'programs/category_delete.html'
     success_url = reverse_lazy('programs:category_list')
     
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin can delete categories
+        if request.user.role != User.Role.ADMIN:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Program category deleted successfully!')
         return super().delete(request, *args, **kwargs)
@@ -83,6 +122,10 @@ class ProgramListView(ListView):
     template_name = 'programs/program_list.html'
     context_object_name = 'programs'
     paginate_by = 20
+    
+    def dispatch(self, request, *args, **kwargs):
+        # All authenticated users can view programs
+        return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -139,8 +182,9 @@ class ProgramDetailView(DetailView):
         context['active_enrollments'] = program.enrollments.filter(status='active').count()
         context['completion_rate'] = program.completion_rate()
         
-        # Add enrollment form for modal
-        context['enrollment_form'] = EnrollmentForm(initial={'program': program})
+        # Add enrollment form for modal (role-aware)
+        if self.request.user.role in [User.Role.ADMIN, User.Role.OFFICER, User.Role.NGO]:
+            context['enrollment_form'] = EnrollmentForm(initial={'program': program})
         
         return context
 

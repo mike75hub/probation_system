@@ -26,12 +26,17 @@
 
                         <!-- Basic Information -->
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    {{ form.code|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     {{ form.name|as_crispy_field }}
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     {{ form.program_type|as_crispy_field }}
                                 </div>
@@ -47,6 +52,19 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     {{ form.status|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.frequency|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.delivery_method|as_crispy_field }}
                                 </div>
                             </div>
                         </div>
@@ -94,6 +112,29 @@
                                     {{ form.eligibility_criteria|as_crispy_field }}
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.referral_required|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.enrollment_deadline|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.prerequisites|as_crispy_field }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.completion_criteria|as_crispy_field }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.expected_outcomes|as_crispy_field }}
                         </div>
 
                         <!-- Facilitator Information -->

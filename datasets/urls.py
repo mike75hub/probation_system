@@ -22,6 +22,8 @@ urlpatterns = [
     # Dataset Source URLs
     path('sources/', views.DatasetSourceListView.as_view(), name='source_list'),
     path('sources/create/', views.DatasetSourceCreateView.as_view(), name='source_create'),
+    path('sources/<int:pk>/', views.DatasetSourceDetailView.as_view(), name='source_detail'),
+    path('sources/<int:pk>/delete/', views.DatasetSourceDeleteView.as_view(), name='source_delete'),
     
     # Feature Map URLs
     path('<int:dataset_id>/featuremaps/create/', 

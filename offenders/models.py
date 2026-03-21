@@ -128,6 +128,26 @@ class Offender(models.Model):
 
     def get_full_name(self):
         return self.user.get_full_name()
+
+    @property
+    def probation_officer(self):
+        """
+        Convenience accessor used across dashboards/templates.
+
+        Returns the officer for the offender's most recently-created active case, if any.
+        """
+        active_case = (
+            self.cases.filter(status=Case.Status.ACTIVE)
+            .select_related("probation_officer")
+            .order_by("-date_created")
+            .first()
+        )
+        return active_case.probation_officer if active_case else None
+
+    @property
+    def created_at(self):
+        """Template compatibility alias for date_created."""
+        return self.date_created
     
     def age(self):
         """Calculate age from date of birth."""

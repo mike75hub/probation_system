@@ -4,6 +4,7 @@ Models for rehabilitation programs.
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils.text import slugify
 from accounts.models import User
 from offenders.models import Offender
 
@@ -12,6 +13,14 @@ class ProgramCategory(models.Model):
     name = models.CharField(
         max_length=100,
         verbose_name=_('Category Name')
+    )
+    slug = models.SlugField(
+        max_length=120,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name=_('Slug'),
+        help_text=_('Optional. Auto-generated from name if blank.')
     )
     description = models.TextField(
         blank=True,
@@ -27,14 +36,46 @@ class ProgramCategory(models.Model):
         default='primary',
         help_text=_('Bootstrap color class')
     )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_('Active')
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_('Display Order')
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        null=True,
+        blank=True,
+        verbose_name=_('Created At')
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        null=True,
+        blank=True,
+        verbose_name=_('Updated At')
+    )
     
     class Meta:
         verbose_name = _('Program Category')
         verbose_name_plural = _('Program Categories')
-        ordering = ['name']
+        ordering = ['display_order', 'name']
     
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)[:110] or "category"
+            slug = base
+            i = 2
+            while ProgramCategory.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+                suffix = f"-{i}"
+                slug = f"{base[: (120 - len(suffix))]}{suffix}"
+                i += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 class Program(models.Model):
     """Rehabilitation program model."""
@@ -53,8 +94,16 @@ class Program(models.Model):
         INACTIVE = 'inactive', _('Inactive')
         ARCHIVED = 'archived', _('Archived')
         DRAFT = 'draft', _('Draft')
-    
+
     # Basic Information
+    code = models.CharField(
+        max_length=30,
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name=_('Program Code'),
+        help_text=_('Optional short code, e.g., VTC-001')
+    )
     name = models.CharField(
         max_length=200,
         verbose_name=_('Program Name')
@@ -77,6 +126,19 @@ class Program(models.Model):
     )
     
     # Program Details
+    frequency = models.CharField(
+        max_length=20,
+        choices=[
+            ("daily", _("Daily")),
+            ("weekly", _("Weekly")),
+            ("biweekly", _("Bi-Weekly")),
+            ("monthly", _("Monthly")),
+            ("custom", _("Custom")),
+        ],
+        default="custom",
+        verbose_name=_("Frequency"),
+        help_text=_("General cadence; use schedule description for specifics.")
+    )
     objectives = models.TextField(
         verbose_name=_('Program Objectives')
     )
@@ -115,6 +177,23 @@ class Program(models.Model):
         default='all',
         verbose_name=_('Target Risk Level')
     )
+
+    referral_required = models.BooleanField(
+        default=False,
+        verbose_name=_('Referral Required')
+    )
+    prerequisites = models.TextField(
+        blank=True,
+        verbose_name=_('Prerequisites')
+    )
+    completion_criteria = models.TextField(
+        blank=True,
+        verbose_name=_('Completion Criteria')
+    )
+    expected_outcomes = models.TextField(
+        blank=True,
+        verbose_name=_('Expected Outcomes')
+    )
     
     # Facilitator Information
     facilitator = models.ForeignKey(
@@ -138,8 +217,19 @@ class Program(models.Model):
         blank=True,
         verbose_name=_('Facilitator Notes')
     )
-    
+
     # Location & Schedule
+    class DeliveryMethod(models.TextChoices):
+        IN_PERSON = 'in_person', _('In-Person')
+        ONLINE = 'online', _('Online')
+        HYBRID = 'hybrid', _('Hybrid')
+
+    delivery_method = models.CharField(
+        max_length=20,
+        choices=DeliveryMethod.choices,
+        default=DeliveryMethod.IN_PERSON,
+        verbose_name=_('Delivery Method')
+    )
     location = models.CharField(
         max_length=200,
         verbose_name=_('Location')
@@ -153,6 +243,11 @@ class Program(models.Model):
     )
     end_date = models.DateField(
         verbose_name=_('End Date')
+    )
+    enrollment_deadline = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_('Enrollment Deadline')
     )
     
     # Cost & Resources
@@ -201,6 +296,11 @@ class Program(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.get_program_type_display()})"
+
+    @property
+    def max_capacity(self):
+        """Template compatibility alias for max_participants."""
+        return self.max_participants
     
     def get_status_color(self):
         """Get Bootstrap color class for status."""
@@ -226,7 +326,11 @@ class Program(models.Model):
     
     def is_accepting_enrollments(self):
         """Check if program is accepting new enrollments."""
+        from datetime import date
+
         if self.status != 'active':
+            return False
+        if self.enrollment_deadline and date.today() > self.enrollment_deadline:
             return False
         if self.current_participants_count() >= self.max_participants:
             return False

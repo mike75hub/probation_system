@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="880" viewBox="0 0 1200 880">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B" />
+    </marker>
+    <style>
+      .title { font: 700 18px Inter, system-ui, -apple-system, Segoe UI, Arial; fill: #0F172A; }
+      .label { font: 500 12px Inter, system-ui, -apple-system, Segoe UI, Arial; fill: #0F172A; }
+      .small { font: 500 11px Inter, system-ui, -apple-system, Segoe UI, Arial; fill: #334155; }
+      .muted { fill: #475569; }
+    </style>
+  </defs>
+
+<text x="30" y="40" class="title">Core Data Model — ERD (simplified)</text>
+<rect x="40" y="80" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="54" y="108" class="label">User</text>
+<text x="54" y="134" class="small">id (PK)</text>
+<text x="54" y="150" class="small">role</text>
+<text x="54" y="166" class="small">designation</text>
+<text x="54" y="182" class="small">email/phone</text>
+<rect x="40" y="250" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="54" y="278" class="label">Offender</text>
+<text x="54" y="304" class="small">id (PK)</text>
+<text x="54" y="320" class="small">user_id (FK)</text>
+<text x="54" y="336" class="small">offender_id</text>
+<text x="54" y="352" class="small">risk_level</text>
+<rect x="40" y="420" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="54" y="448" class="label">Case</text>
+<text x="54" y="474" class="small">id (PK)</text>
+<text x="54" y="490" class="small">offender_id (FK)</text>
+<text x="54" y="506" class="small">probation_officer_id (FK)</text>
+<text x="54" y="522" class="small">status</text>
+<rect x="40" y="590" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="54" y="618" class="label">CheckIn</text>
+<text x="54" y="644" class="small">id (PK)</text>
+<text x="54" y="660" class="small">case_id (FK)</text>
+<text x="54" y="676" class="small">offender_id (FK)</text>
+<text x="54" y="692" class="small">probation_officer_id (FK)</text>
+<text x="54" y="708" class="small">status</text>
+<rect x="430" y="250" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="444" y="278" class="label">Assessment</text>
+<text x="444" y="304" class="small">id (PK)</text>
+<text x="444" y="320" class="small">offender_id (FK)</text>
+<text x="444" y="336" class="small">assessed_by_id (FK)</text>
+<text x="444" y="352" class="small">overall_risk_score</text>
+<rect x="740" y="80" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="754" y="108" class="label">ProgramCategory</text>
+<text x="754" y="134" class="small">id (PK)</text>
+<text x="754" y="150" class="small">slug</text>
+<text x="754" y="166" class="small">is_active</text>
+<text x="754" y="182" class="small">display_order</text>
+<rect x="740" y="250" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="754" y="278" class="label">Program</text>
+<text x="754" y="304" class="small">id (PK)</text>
+<text x="754" y="320" class="small">category_id (FK)</text>
+<text x="754" y="336" class="small">facilitator_id (FK)</text>
+<text x="754" y="352" class="small">code</text>
+<text x="754" y="368" class="small">status</text>
+<rect x="740" y="450" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="754" y="478" class="label">Enrollment</text>
+<text x="754" y="504" class="small">id (PK)</text>
+<text x="754" y="520" class="small">program_id (FK)</text>
+<text x="754" y="536" class="small">offender_id (FK)</text>
+<text x="754" y="552" class="small">referred_by_id (FK)</text>
+<text x="754" y="568" class="small">status</text>
+<rect x="740" y="630" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="754" y="658" class="label">Session</text>
+<text x="754" y="684" class="small">id (PK)</text>
+<text x="754" y="700" class="small">program_id (FK)</text>
+<text x="754" y="716" class="small">facilitator_id (FK)</text>
+<text x="754" y="732" class="small">date/time</text>
+<rect x="430" y="630" width="320" height="140" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="444" y="658" class="label">Attendance</text>
+<text x="444" y="684" class="small">id (PK)</text>
+<text x="444" y="700" class="small">session_id (FK)</text>
+<text x="444" y="716" class="small">enrollment_id (FK)</text>
+<text x="444" y="732" class="small">status</text>
+<line x1="200" y1="220" x2="200" y2="250" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="200" y="229" text-anchor="middle" class="small muted">1:1</text>
+<line x1="200" y1="390" x2="200" y2="420" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="200" y="399" text-anchor="middle" class="small muted">1:*</text>
+<line x1="360" y1="150" x2="40" y2="490" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="200" y="314" text-anchor="middle" class="small muted">officer 1:*</text>
+<line x1="360" y1="320" x2="430" y2="320" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="395" y="314" text-anchor="middle" class="small muted">1:*</text>
+<line x1="360" y1="150" x2="430" y2="320" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="395" y="229" text-anchor="middle" class="small muted">assessor 1:*</text>
+<line x1="200" y1="560" x2="200" y2="590" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="200" y="569" text-anchor="middle" class="small muted">1:*</text>
+<line x1="1060" y1="150" x2="740" y2="320" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="900" y="229" text-anchor="middle" class="small muted">1:*</text>
+<line x1="900" y1="390" x2="900" y2="450" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="900" y="414" text-anchor="middle" class="small muted">1:*</text>
+<line x1="740" y1="520" x2="750" y2="700" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="745" y="604" text-anchor="middle" class="small muted">1:*</text>
+<line x1="740" y1="700" x2="750" y2="700" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="745" y="694" text-anchor="middle" class="small muted">1:*</text>
+</svg>

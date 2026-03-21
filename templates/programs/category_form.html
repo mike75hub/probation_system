@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'programs:category_list' %}" class="d-none d-sm-inline-block btn btn-secondary">
+            <i class="fas fa-arrow-left fa-sm mr-2"></i>Back
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Category Details</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.slug|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        {{ form.description|as_crispy_field }}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.icon|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.color|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.is_active|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.display_order|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save mr-2"></i>Save
+                            </button>
+                            <a href="{% url 'programs:category_list' %}" class="btn btn-secondary">Cancel</a>
+                            {% if form.instance.pk %}
+                            <a href="{% url 'programs:category_delete' form.instance.pk %}" class="btn btn-danger float-right">
+                                <i class="fas fa-trash mr-2"></i>Delete
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Tips</h6>
+                </div>
+                <div class="card-body small text-muted">
+                    <ul class="mb-0">
+                        <li>Use the slug for stable URLs and filtering.</li>
+                        <li>Set a display order to control listing priority.</li>
+                        <li>Deactivate instead of deleting if in use.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

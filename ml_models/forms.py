@@ -175,37 +175,16 @@ class SinglePredictionForm(forms.Form):
     """Form for making a single prediction."""
     
     ml_model = forms.ModelChoiceField(
-        queryset=MLModel.objects.filter(is_active=True, status='deployed'),
-        help_text="Select a deployed model"
+        queryset=MLModel.objects.filter(is_active=True, status__in=['trained', 'deployed']),
+        help_text="Select a trained or deployed model"
     )
-    
-    # Dynamic feature fields will be added in JavaScript
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        
-        # Get feature columns from the first model
-        first_model = MLModel.objects.filter(is_active=True, status='deployed').first()
-        if first_model:
-            self.add_feature_fields(first_model)
-    
-    def add_feature_fields(self, model):
-        """Add dynamic fields for model features."""
-        feature_columns = model.feature_columns or []
-        
-        for feature in feature_columns:
-            self.fields[f'feature_{feature}'] = forms.FloatField(
-                required=True,
-                label=feature.replace('_', ' ').title(),
-                help_text=f"Enter value for {feature}"
-            )
 
 class BatchPredictionForm(forms.Form):
     """Form for batch predictions."""
     
     ml_model = forms.ModelChoiceField(
-        queryset=MLModel.objects.filter(is_active=True, status='deployed'),
-        help_text="Select a deployed model"
+        queryset=MLModel.objects.filter(is_active=True, status__in=['trained', 'deployed']),
+        help_text="Select a trained or deployed model"
     )
     
     input_file = forms.FileField(

@@ -1,0 +1,22 @@
+{
+  "algorithm": "logistic_regression",
+  "training_time": 55.0862832069397,
+  "parameters": {
+    "C": 1.0,
+    "class_weight": null,
+    "dual": false,
+    "fit_intercept": true,
+    "intercept_scaling": 1,
+    "l1_ratio": 0.0,
+    "max_iter": 100,
+    "n_jobs": null,
+    "penalty": "deprecated",
+    "random_state": 42,
+    "solver": "lbfgs",
+    "tol": 0.0001,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "feature_importance": {},
+  "saved_at": "2026-03-18T15:40:15.005454"
+}

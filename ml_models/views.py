@@ -3,16 +3,17 @@ Views for ml_models app.
 """
 import json
 import pandas as pd
+import tempfile
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Count, Avg, Q
 from django.views.decorators.csrf import csrf_exempt
-from django.core.files.base import ContentFile
+from django.core.files import File
 import os
 from datetime import datetime, timedelta
 
@@ -410,17 +411,31 @@ def train_model(request):
                             model_type=model_type
                         )
                         
-                        # Save model
-                        model_dir = os.path.join('media/ml_models', datetime.now().strftime('%Y/%m/%d'))
-                        os.makedirs(model_dir, exist_ok=True)
-                        
+                        # Save model artifact to FileField storage (correct MEDIA_ROOT handling).
                         model_filename = f"{name.replace(' ', '_').lower()}.pkl"
-                        model_path = os.path.join(model_dir, model_filename)
-                        
-                        trainer.save_model(model_result, model_path)
-                        
+                        tmp = tempfile.NamedTemporaryFile(suffix=".pkl", delete=False)
+                        tmp.close()
+                        try:
+                            save_result = trainer.save_model(model_result, tmp.name)
+                            with open(save_result["model_path"], "rb") as f:
+                                ml_model.model_file.save(model_filename, File(f), save=False)
+                        finally:
+                            # Clean up temporary artifacts written by trainer.save_model
+                            try:
+                                os.remove(tmp.name)
+                            except OSError:
+                                pass
+                            for extra in (
+                                tmp.name.replace(".pkl", "_metadata.json"),
+                                tmp.name.replace(".pkl", "_scaler.pkl"),
+                                tmp.name.replace(".pkl", "_encoder.pkl"),
+                            ):
+                                try:
+                                    os.remove(extra)
+                                except OSError:
+                                    pass
+
                         # Update ML model
-                        ml_model.model_file.name = model_path
                         ml_model.status = 'trained'
                         ml_model.training_time_seconds = model_result['training_time']
                         ml_model.save()
@@ -479,33 +494,93 @@ def make_prediction(request):
             try:
                 ml_model = form.cleaned_data['ml_model']
                 
-                # Extract features from form
-                features = {}
-                feature_columns = ml_model.feature_columns or []
-                
-                for feature in feature_columns:
-                    field_name = f'feature_{feature}'
-                    if field_name in form.cleaned_data:
-                        features[feature] = form.cleaned_data[field_name]
-                
-                # For demo, use a mock offender
-                from offenders.models import Offender
-                offender = Offender.objects.first()  # In real app, select appropriate offender
-                
-                # Make prediction
-                result = PredictionService.make_prediction(ml_model, offender, features)
-                
-                if result['success']:
+                if not ml_model.model_file:
+                    result = {'success': False, 'error': 'Selected model has no model file attached.'}
+                else:
+                    # Extract features from POST (dynamic inputs rendered via JS).
+                    features = {}
+                    feature_columns = ml_model.feature_columns or []
+                    
+                    if not feature_columns:
+                        result = {'success': False, 'error': 'No features defined for this model.'}
+                    else:
+                        missing = []
+                        invalid = []
+                        
+                        for feature in feature_columns:
+                            field_name = f'feature_{feature}'
+                            raw_value = request.POST.get(field_name)
+                            
+                            if raw_value in (None, ''):
+                                missing.append(feature)
+                                continue
+                            
+                            try:
+                                features[feature] = float(raw_value)
+                            except (TypeError, ValueError):
+                                invalid.append(feature)
+                        
+                        if missing:
+                            result = {
+                                'success': False,
+                                'error': f"Missing feature values: {', '.join(missing)}"
+                            }
+                        elif invalid:
+                            result = {
+                                'success': False,
+                                'error': f"Invalid numeric values for: {', '.join(invalid)}"
+                            }
+                        else:
+                            # Make prediction (offender is optional in this UI).
+                            result = PredictionService.make_prediction(
+                                ml_model,
+                                offender=None,
+                                features=features,
+                                made_by=request.user,
+                            )
+
+                # AJAX flow (template submits via jQuery).
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    if result.get('success'):
+                        prediction = result['prediction']
+                        response_result = dict(result.get('result') or {})
+                        response_result['model_name'] = ml_model.name
+                        return JsonResponse({
+                            'success': True,
+                            'result': response_result,
+                            'prediction_url': reverse('ml_models:prediction_detail', kwargs={'pk': prediction.pk}),
+                        })
+                    
+                    return JsonResponse({
+                        'success': False,
+                        'error': result.get('error', 'Prediction failed'),
+                    })
+
+                # Non-AJAX fallback
+                if result.get('success'):
                     messages.success(request, "Prediction made successfully!")
                     return redirect('ml_models:prediction_detail', pk=result['prediction'].pk)
-                else:
-                    messages.error(request, f"Prediction failed: {result['error']}")
+
+                messages.error(request, f"Prediction failed: {result.get('error', 'Unknown error')}")
                 
             except Exception as e:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': str(e)})
                 messages.error(request, f"Error making prediction: {str(e)}")
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                error_text = "Invalid form submission."
+                if form.errors:
+                    error_text = "; ".join(
+                        f"{field}: {', '.join(errors)}" for field, errors in form.errors.items()
+                    )
+                return JsonResponse({'success': False, 'error': error_text})
     
     else:
-        form = SinglePredictionForm()
+        initial = {}
+        if request.GET.get('model'):
+            initial['ml_model'] = request.GET.get('model')
+        form = SinglePredictionForm(initial=initial)
     
     return render(request, 'ml_models/make_prediction.html', {'form': form})
 

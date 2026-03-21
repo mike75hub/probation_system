@@ -29,6 +29,10 @@ from .forms import (
 )
 from offenders.models import Offender, Case
 from accounts.models import User
+from accounts.permissions import (
+    OfficerOrAdminMixin, AdminRequiredMixin,
+    user_can_view_checkin
+)
 
 # Check-in Type Views
 @method_decorator(login_required, name='dispatch')
@@ -36,6 +40,13 @@ class CheckInTypeListView(ListView):
     model = CheckInType
     template_name = 'monitoring/checkintype_list.html'
     context_object_name = 'checkin_types'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin and officers can view check-in types
+        if request.user.role not in [User.Role.ADMIN, User.Role.OFFICER]:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -49,6 +60,13 @@ class CheckInTypeCreateView(CreateView):
     template_name = 'monitoring/checkintype_form.html'
     success_url = reverse_lazy('monitoring:checkintype_list')
     
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin can create check-in types
+        if request.user.role != User.Role.ADMIN:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
     def form_valid(self, form):
         messages.success(self.request, 'Check-in type created successfully!')
         return super().form_valid(form)
@@ -60,6 +78,13 @@ class CheckInTypeUpdateView(UpdateView):
     template_name = 'monitoring/checkintype_form.html'
     success_url = reverse_lazy('monitoring:checkintype_list')
     
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin can update check-in types
+        if request.user.role != User.Role.ADMIN:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
+    
     def form_valid(self, form):
         messages.success(self.request, 'Check-in type updated successfully!')
         return super().form_valid(form)
@@ -69,6 +94,13 @@ class CheckInTypeDeleteView(DeleteView):
     model = CheckInType
     template_name = 'monitoring/checkintype_delete.html'
     success_url = reverse_lazy('monitoring:checkintype_list')
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin can delete check-in types
+        if request.user.role != User.Role.ADMIN:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Check-in type deleted successfully!')
@@ -81,6 +113,13 @@ class CheckInListView(ListView):
     template_name = 'monitoring/checkin_list.html'
     context_object_name = 'checkins'
     paginate_by = 20
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Only admin, officer, and offender can view check-ins
+        if request.user.role not in [User.Role.ADMIN, User.Role.OFFICER, User.Role.OFFENDER]:
+            messages.error(request, 'You do not have permission to access this resource.')
+            return redirect('accounts:dashboard')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -106,9 +145,17 @@ class CheckInListView(ListView):
         if officer:
             queryset = queryset.filter(probation_officer_id=officer)
         
-        # For officers, show only their check-ins
-        if self.request.user.is_officer:
+        # Apply role-based filtering
+        if self.request.user.role == User.Role.OFFICER:
+            # Officers only see their check-ins
             queryset = queryset.filter(probation_officer=self.request.user)
+        elif self.request.user.role == User.Role.OFFENDER:
+            # Offenders only see their own check-ins
+            try:
+                offender_obj = Offender.objects.get(user=self.request.user)
+                queryset = queryset.filter(offender=offender_obj)
+            except Offender.DoesNotExist:
+                queryset = queryset.none()
         
         return queryset.order_by('-scheduled_date')
     
@@ -117,10 +164,17 @@ class CheckInListView(ListView):
         context['title'] = 'Check-ins'
         context['search_form'] = CheckInSearchForm(self.request.GET or None)
         
-        # Statistics
-        context['total_checkins'] = CheckIn.objects.count()
-        context['completed_checkins'] = CheckIn.objects.filter(status='completed').count()
-        context['missed_checkins'] = CheckIn.objects.filter(status='missed').count()
+        # Statistics (role-aware)
+        if self.request.user.role == User.Role.ADMIN:
+            context['total_checkins'] = CheckIn.objects.count()
+            context['completed_checkins'] = CheckIn.objects.filter(status='completed').count()
+            context['missed_checkins'] = CheckIn.objects.filter(status='missed').count()
+        else:
+            queryset = self.get_queryset()
+            context['total_checkins'] = queryset.count()
+            context['completed_checkins'] = queryset.filter(status='completed').count()
+            context['missed_checkins'] = queryset.filter(status='missed').count()
+        
         context['upcoming_checkins'] = CheckIn.objects.filter(
             status='scheduled',
             scheduled_date__gte=timezone.now()
@@ -139,6 +193,14 @@ class CheckInDetailView(DetailView):
     model = CheckIn
     template_name = 'monitoring/checkin_detail.html'
     context_object_name = 'checkin'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Check if user can view this check-in
+        checkin = self.get_object()
+        if not user_can_view_checkin(request.user, checkin):
+            messages.error(request, 'You do not have permission to view this check-in.')
+            return redirect('monitoring:checkin_list')
+        return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

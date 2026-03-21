@@ -1,14 +1,19 @@
 """
 Views for accounts app.
 """
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Count, Q
 from .forms import LoginForm, CustomUserCreationForm
 from .models import User
+from .permissions import (
+    admin_required, authenticated_required, admin_required,
+    user_can_manage_users
+)
+from offenders.models import Case, Offender
 
 def login_view(request):
     """
@@ -137,12 +142,15 @@ def dashboard_view(request):
 
 def register_view(request):
     """
-    Handle user registration (for demo purposes only).
-    In production, this would have proper validation and security.
+    Handle user registration (admin only in production).
+    In development/demo, this allows self-registration.
     """
     if request.user.is_authenticated:
         messages.info(request, 'You are already logged in.')
         return redirect('accounts:dashboard')
+    
+    # In production, only admins should be able to register users
+    # For now, we allow self-registration for demo purposes
     
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -335,7 +343,11 @@ def create_user_view(request):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = CustomUserCreationForm()
+        initial = {}
+        requested_role = request.GET.get("role")
+        if requested_role in {r[0] for r in User.Role.choices}:
+            initial["role"] = requested_role
+        form = CustomUserCreationForm(initial=initial)
     
     context = {
         'form': form,
@@ -363,6 +375,7 @@ def user_detail_view(request, user_id):
         user.last_name = request.POST.get('last_name', user.last_name)
         user.email = request.POST.get('email', user.email)
         user.phone = request.POST.get('phone', user.phone)
+        user.designation = request.POST.get('designation', user.designation)
         user.role = request.POST.get('role', user.role)
         user.is_active = 'is_active' in request.POST
         
@@ -376,6 +389,84 @@ def user_detail_view(request, user_id):
         'title': f'User: {user.username}'
     }
     return render(request, 'accounts/user_detail.html', context)
+
+
+def officers_list_view(request):
+    """
+    List officers with caseload (admin only).
+    """
+    if not request.user.is_authenticated or not request.user.is_admin():
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('accounts:dashboard')
+
+    officers = (
+        User.objects.filter(role=User.Role.OFFICER)
+        .annotate(
+            active_case_count=Count(
+                "assigned_cases", filter=Q(assigned_cases__status=Case.Status.ACTIVE)
+            )
+        )
+        .order_by("first_name", "last_name", "username")
+    )
+
+    search_query = request.GET.get("search", "")
+    if search_query:
+        officers = officers.filter(
+            Q(username__icontains=search_query)
+            | Q(email__icontains=search_query)
+            | Q(first_name__icontains=search_query)
+            | Q(last_name__icontains=search_query)
+            | Q(designation__icontains=search_query)
+        )
+
+    context = {
+        "officers": officers,
+        "search_query": search_query,
+        "title": "Officers",
+    }
+    return render(request, "accounts/officers_list.html", context)
+
+
+def officer_detail_view(request, user_id):
+    """
+    Officer profile + caseload view (admin or the officer).
+    """
+    if not request.user.is_authenticated:
+        return redirect("accounts:login")
+
+    officer = get_object_or_404(User, id=user_id, role=User.Role.OFFICER)
+    if not request.user.is_admin() and request.user.id != officer.id:
+        messages.error(request, "Access denied.")
+        return redirect("accounts:dashboard")
+
+    active_cases = (
+        Case.objects.filter(probation_officer=officer, status=Case.Status.ACTIVE)
+        .select_related("offender", "offender__user")
+        .order_by("-date_created")
+    )
+    offenders = (
+        Offender.objects.filter(cases__in=active_cases)
+        .distinct()
+        .select_related("user")
+        .order_by("-date_created")
+    )
+
+    stats = {
+        "active_cases": active_cases.count(),
+        "offenders": offenders.count(),
+        "high_risk": offenders.filter(risk_level=Offender.RiskLevel.HIGH).count(),
+        "medium_risk": offenders.filter(risk_level=Offender.RiskLevel.MEDIUM).count(),
+        "low_risk": offenders.filter(risk_level=Offender.RiskLevel.LOW).count(),
+    }
+
+    context = {
+        "officer": officer,
+        "active_cases": active_cases[:50],
+        "offenders": offenders[:50],
+        "stats": stats,
+        "title": f"Officer: {officer.get_full_name() or officer.username}",
+    }
+    return render(request, "accounts/officer_detail.html", context)
 
 # Helper functions
 def get_user_stats(user):

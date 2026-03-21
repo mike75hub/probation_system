@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Category{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Delete Category</h1>
+        <a href="{% url 'programs:category_list' %}" class="d-none d-sm-inline-block btn btn-secondary">
+            <i class="fas fa-arrow-left fa-sm mr-2"></i>Back
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="alert alert-warning">
+                You are about to delete category <strong>{{ object.name }}</strong>.
+                This action cannot be undone.
+            </div>
+
+            {% if object.programs.count %}
+            <div class="alert alert-danger">
+                This category has {{ object.programs.count }} program(s). Remove or reassign those programs before deleting.
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" {% if object.programs.count %}disabled{% endif %}>
+                    <i class="fas fa-trash mr-2"></i>Confirm Delete
+                </button>
+                <a href="{% url 'programs:category_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

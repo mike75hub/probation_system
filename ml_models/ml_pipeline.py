@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from django.conf import settings
+from django.core.files import File
 from .trainers import RiskAssessmentTrainer, ProgramRecommenderTrainer
 from .predictors import PredictionService
 
@@ -73,9 +74,6 @@ class MLPipeline:
                 training_dataset=None,  # Would link to Dataset model if available
                 feature_columns=result.get('feature_names', []),
                 target_column='recidivism_risk',
-                model_file=save_result['model_path'],
-                scaler_file=save_result.get('scaler_path'),
-                encoder_file=save_result.get('encoder_path'),
                 hyperparameters=result['model_result'].get('parameters', {}),
                 training_parameters={'algorithm': 'random_forest'},
                 accuracy=result['metrics'].get('accuracy'),
@@ -88,6 +86,25 @@ class MLPipeline:
                 training_time_seconds=result['model_result'].get('training_time'),
                 version='1.0.0'
             )
+
+            # Attach artifacts to FileFields (so predictors can load from storage reliably).
+            try:
+                with open(save_result["model_path"], "rb") as f:
+                    ml_model.model_file.save(model_filename, File(f), save=False)
+                if save_result.get("scaler_path"):
+                    with open(save_result["scaler_path"], "rb") as f:
+                        ml_model.scaler_file.save(
+                            model_filename.replace(".pkl", "_scaler.pkl"), File(f), save=False
+                        )
+                if save_result.get("encoder_path"):
+                    with open(save_result["encoder_path"], "rb") as f:
+                        ml_model.encoder_file.save(
+                            model_filename.replace(".pkl", "_encoder.pkl"), File(f), save=False
+                        )
+                ml_model.save()
+            except Exception:
+                # Don't fail the pipeline if file attachment fails; model record still exists.
+                pass
             
             # Update job with model reference
             job.ml_model = ml_model

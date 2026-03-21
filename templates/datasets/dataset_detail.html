@@ -17,18 +17,20 @@
                 </ol>
             </nav>
         </div>
-        <div class="btn-group">
-            <a href="{% url 'datasets:dataset_update' dataset.pk %}" class="btn btn-outline-primary">
-                <i class="fas fa-edit me-2"></i>Edit
-            </a>
-            <a href="{% url 'datasets:dataset_download' dataset.pk %}" class="btn btn-outline-success">
-                <i class="fas fa-download me-2"></i>Download
-            </a>
-            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                <i class="fas fa-trash me-2"></i>Delete
-            </button>
-        </div>
-    </div>
+	        <div class="btn-group">
+	            <a href="{% url 'datasets:dataset_update' dataset.pk %}" class="btn btn-outline-primary">
+	                <i class="fas fa-edit me-2"></i>Edit
+	            </a>
+	            <a href="{% url 'datasets:dataset_download' dataset.pk %}" class="btn btn-outline-success">
+	                <i class="fas fa-download me-2"></i>Download
+	            </a>
+	            {% if user.is_superuser or user.role == 'admin' or dataset.uploaded_by_id == user.id %}
+	            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+	                <i class="fas fa-trash me-2"></i>Delete
+	            </button>
+	            {% endif %}
+	        </div>
+	    </div>
 
     <div class="row">
         <!-- Left Column: Dataset Info -->
@@ -301,14 +303,16 @@
     </div>
 </div>
 
-<!-- Delete Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
+	{% if user.is_superuser or user.role == 'admin' or dataset.uploaded_by_id == user.id %}
+	<!-- Delete Modal -->
+	<div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirm Delete</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+	</div>
+	{% endif %}
             <div class="modal-body">
                 <p>Are you sure you want to delete the dataset <strong>"{{ dataset.name }}"</strong>?</p>
                 <div class="alert alert-danger">

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B" />
+    </marker>
+    <style>
+      .title { font: 700 18px Inter, system-ui, -apple-system, Segoe UI, Arial; fill: #0F172A; }
+      .label { font: 500 12px Inter, system-ui, -apple-system, Segoe UI, Arial; fill: #0F172A; }
+      .small { font: 500 11px Inter, system-ui, -apple-system, Segoe UI, Arial; fill: #334155; }
+      .muted { fill: #475569; }
+    </style>
+  </defs>
+
+<text x="30" y="40" class="title">Probation Management System — Workflow Flowchart</text>
+<rect x="80" y="80" width="200" height="60" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="180" y="113" text-anchor="middle" class="label"><tspan x="180" dy="0">Login</tspan></text>
+<path d="M 520 110 L 620 155 L 520 200 L 420 155 Z" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="520" y="158" text-anchor="middle" class="label"><tspan x="520" dy="0">Role?</tspan></text>
+<rect x="740" y="60" width="220" height="55" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="850" y="90" text-anchor="middle" class="label"><tspan x="850" dy="0">Admin Dashboard</tspan></text>
+<rect x="740" y="130" width="220" height="55" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="850" y="160" text-anchor="middle" class="label"><tspan x="850" dy="0">Officer Dashboard</tspan></text>
+<rect x="740" y="200" width="220" height="55" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="850" y="230" text-anchor="middle" class="label"><tspan x="850" dy="0">Offender Dashboard</tspan></text>
+<rect x="740" y="270" width="220" height="55" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="850" y="300" text-anchor="middle" class="label"><tspan x="850" dy="0">Judiciary/NGO Dashboard</tspan></text>
+<rect x="80" y="220" width="260" height="60" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="210" y="253" text-anchor="middle" class="label"><tspan x="210" dy="0">Create/Update Offender</tspan></text>
+<rect x="80" y="300" width="260" height="60" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="210" y="333" text-anchor="middle" class="label"><tspan x="210" dy="0">Create/Update Case (active)</tspan></text>
+<path d="M 530 330 L 640 375 L 530 420 L 420 375 Z" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="530" y="378" text-anchor="middle" class="label"><tspan x="530" dy="0">Officer assigned?</tspan></text>
+<rect x="740" y="340" width="220" height="60" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="850" y="373" text-anchor="middle" class="label"><tspan x="850" dy="0">Auto-Assign (least-loaded)</tspan></text>
+<rect x="80" y="420" width="260" height="60" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="210" y="453" text-anchor="middle" class="label"><tspan x="210" dy="0">Supervision</tspan></text>
+<rect x="80" y="500" width="260" height="60" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="210" y="533" text-anchor="middle" class="label"><tspan x="210" dy="0">Schedule Check-in</tspan></text>
+<path d="M 530 530 L 640 575 L 530 620 L 420 575 Z" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="530" y="578" text-anchor="middle" class="label"><tspan x="530" dy="0">Outcome</tspan></text>
+<rect x="740" y="500" width="220" height="55" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="850" y="530" text-anchor="middle" class="label"><tspan x="850" dy="0">Completed (notes+compliance)</tspan></text>
+<rect x="740" y="560" width="220" height="55" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="850" y="590" text-anchor="middle" class="label"><tspan x="850" dy="0">Missed (flag non-compliance)</tspan></text>
+<rect x="80" y="620" width="260" height="60" rx="10" ry="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="210" y="653" text-anchor="middle" class="label"><tspan x="210" dy="0">Programs (catalog + enroll)</tspan></text>
+<rect x="740" y="650" width="220" height="60" rx="10" ry="10" fill="#EEF2FF" stroke="#A5B4FC" stroke-width="1.5"/>
+<text x="850" y="683" text-anchor="middle" class="label"><tspan x="850" dy="0">Reports &amp; Analytics</tspan></text>
+<line x1="280" y1="110" x2="420" y2="155" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="620" y1="155" x2="740" y2="87" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="680" y="115" text-anchor="middle" class="small muted">admin</text>
+<line x1="620" y1="180" x2="740" y2="157" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="680" y="162" text-anchor="middle" class="small muted">officer</text>
+<line x1="620" y1="210" x2="740" y2="227" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="680" y="212" text-anchor="middle" class="small muted">offender</text>
+<line x1="620" y1="240" x2="740" y2="297" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="680" y="262" text-anchor="middle" class="small muted">judiciary/ngo</text>
+<line x1="210" y1="280" x2="210" y2="300" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="210" y1="360" x2="530" y2="330" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="640" y1="375" x2="740" y2="370" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="690" y="366" text-anchor="middle" class="small muted">no</text>
+<line x1="530" y1="420" x2="210" y2="420" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="370" y="414" text-anchor="middle" class="small muted">yes</text>
+<line x1="740" y1="370" x2="340" y2="450" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="210" y1="480" x2="210" y2="500" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="210" y1="560" x2="530" y2="530" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="640" y1="575" x2="740" y2="527" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="690" y="545" text-anchor="middle" class="small muted">completed</text>
+<line x1="640" y1="603" x2="740" y2="587" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="690" y="589" text-anchor="middle" class="small muted">missed</text>
+<line x1="210" y1="560" x2="210" y2="620" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/><text x="210" y="584" text-anchor="middle" class="small muted">also</text>
+<line x1="340" y1="650" x2="740" y2="680" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="960" y1="527" x2="740" y2="680" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="960" y1="587" x2="740" y2="680" stroke="#64748B" stroke-width="1.5" marker-end="url(#arrow)"/>
+</svg>

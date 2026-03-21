@@ -249,7 +249,7 @@ class PredictionService:
             )
     
     @staticmethod
-    def make_prediction(ml_model, offender, features):
+    def make_prediction(ml_model, offender, features, made_by=None):
         """Make prediction and save results."""
         from .models import Prediction
         
@@ -278,11 +278,31 @@ class PredictionService:
                 
             else:
                 prediction, probabilities = predictor.predict(features, return_probabilities=True)
-                predicted_value = float(prediction[0]) if isinstance(prediction, np.ndarray) else prediction
-                predicted_class = str(predicted_value)
+                pred0 = prediction[0] if isinstance(prediction, np.ndarray) else prediction
+                predicted_class = str(pred0)
+
+                predicted_value = None
+                try:
+                    if isinstance(pred0, (int, float, np.number)):
+                        predicted_value = float(pred0)
+                    else:
+                        predicted_value = float(pred0)  # may fail for non-numeric classes
+                except Exception:
+                    predicted_value = None
+
                 confidence = float(np.max(probabilities[0])) if probabilities is not None else None
+                result = {
+                    "predicted_class": predicted_class,
+                    "predicted_value": predicted_value,
+                    "confidence": confidence,
+                    "prediction_time": datetime.now().isoformat(),
+                }
             
             # Save prediction
+            made_by_user = made_by
+            if made_by_user is None and offender is not None and hasattr(offender, 'user'):
+                made_by_user = offender.user
+
             prediction_record = Prediction.objects.create(
                 ml_model=ml_model,
                 offender=offender,
@@ -291,7 +311,7 @@ class PredictionService:
                 prediction_confidence=confidence,
                 predicted_value=predicted_value,
                 predicted_class=predicted_class,
-                made_by=offender.user if hasattr(offender, 'user') else None
+                made_by=made_by_user
             )
             
             return {

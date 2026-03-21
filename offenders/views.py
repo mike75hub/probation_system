@@ -9,13 +9,40 @@ from django.db.models import Q
 from .models import Offender, Case, Assessment
 from .forms import OffenderForm, CaseForm, AssessmentForm, OffenderSearchForm
 from accounts.models import User
+from accounts.permissions import (
+    officer_or_admin_required, admin_required, offender_required,
+    user_can_view_offender, user_can_edit_offender, user_can_delete_offender
+)
 from datetime import date, timedelta  # Add this import
 
 @login_required
 def offender_list(request):
-    """List all offenders with search and filter."""
+    """List all offenders with search and filter - role-aware."""
     
-    offenders = Offender.objects.all().order_by('-date_created')
+    # Determine what offenders the user can see
+    if request.user.role == User.Role.ADMIN:
+        offenders = Offender.objects.all().order_by('-date_created')
+    elif request.user.role == User.Role.OFFICER:
+        # Officers only see offenders assigned to them
+        from offenders.models import Case
+        assigned_offender_ids = Case.objects.filter(
+            assigned_officer=request.user,
+            status='active'
+        ).values_list('offender_id', flat=True)
+        offenders = Offender.objects.filter(id__in=assigned_offender_ids).order_by('-date_created')
+    elif request.user.role == User.Role.OFFENDER:
+        # Offenders only see their own record
+        try:
+            my_offender = Offender.objects.get(user=request.user)
+            offenders = Offender.objects.filter(id=my_offender.id)
+        except Offender.DoesNotExist:
+            offenders = Offender.objects.none()
+    elif request.user.role in [User.Role.JUDICIARY, User.Role.NGO]:
+        # Judiciary and NGO have view-only limited access
+        offenders = Offender.objects.all().order_by('-date_created')
+    else:
+        offenders = Offender.objects.none()
+    
     search_form = OffenderSearchForm(request.GET or None)
     
     if search_form.is_valid():
@@ -56,10 +83,19 @@ def offender_list(request):
     except EmptyPage:
         offenders_page = paginator.page(paginator.num_pages)
     
-    # Get counts for dashboard
-    total_offenders = Offender.objects.count()
-    active_offenders = Offender.objects.filter(is_active=True).count()
-    high_risk_offenders = Offender.objects.filter(risk_level='high').count()
+    # Get counts for dashboard (role-aware)
+    if request.user.role == User.Role.ADMIN:
+        total_offenders = Offender.objects.count()
+        active_offenders = Offender.objects.filter(is_active=True).count()
+        high_risk_offenders = Offender.objects.filter(risk_level='high').count()
+    elif request.user.role == User.Role.OFFICER:
+        total_offenders = offenders.count()
+        active_offenders = offenders.filter(is_active=True).count()
+        high_risk_offenders = offenders.filter(risk_level='high').count()
+    else:
+        total_offenders = offenders.count()
+        active_offenders = offenders.filter(is_active=True).count()
+        high_risk_offenders = offenders.filter(risk_level='high').count()
     
     context = {
         'offenders': offenders_page,
@@ -73,9 +109,15 @@ def offender_list(request):
 
 @login_required
 def offender_detail(request, pk):
-    """View offender details."""
+    """View offender details - role-aware access."""
     
     offender = get_object_or_404(Offender, pk=pk)
+    
+    # Check if user can view this offender
+    if not user_can_view_offender(request.user, offender):
+        messages.error(request, 'You do not have permission to view this offender.')
+        return redirect('offenders:offender_list')
+    
     cases = offender.cases.all().order_by('-date_created')
     assessments = offender.assessments.all().order_by('-assessment_date')
     
@@ -87,24 +129,35 @@ def offender_detail(request, pk):
         'cases': cases,
         'assessments': assessments,
         'latest_assessment': latest_assessment,
+        'can_edit': user_can_edit_offender(request.user, offender),
+        'can_delete': user_can_delete_offender(request.user, offender),
     }
     
     return render(request, 'offenders/detail.html', context)
 
 @login_required
 def offender_create(request):
-    """Create a new offender."""
+    """Create a new offender - admin and officer only."""
     
-    if not request.user.is_admin() and not request.user.is_officer():
+    # Check permissions
+    if request.user.role not in [User.Role.ADMIN, User.Role.OFFICER]:
         messages.error(request, 'You do not have permission to create offenders.')
-        return redirect('offender_list')
+        return redirect('offenders:offender_list')
     
     if request.method == 'POST':
         form = OffenderForm(request.POST)
         if form.is_valid():
             offender = form.save()
+            # Optional: attempt an automatic ML prediction if a deployed model is available.
+            try:
+                from ml_models.auto_predict import auto_predict_offender
+
+                auto_predict_offender(offender=offender, made_by=request.user, min_feature_coverage=0.0)
+            except Exception:
+                # Prediction should never block offender creation.
+                pass
             messages.success(request, f'Offender {offender.offender_id} created successfully!')
-            return redirect('offender_detail', pk=offender.pk)
+            return redirect('offenders:offender_detail', pk=offender.pk)
     else:
         form = OffenderForm()
     
@@ -117,20 +170,21 @@ def offender_create(request):
 
 @login_required
 def offender_update(request, pk):
-    """Update an existing offender."""
-    
-    if not request.user.is_admin() and not request.user.is_officer():
-        messages.error(request, 'You do not have permission to update offenders.')
-        return redirect('offender_list')
+    """Update an existing offender - restricted access."""
     
     offender = get_object_or_404(Offender, pk=pk)
+    
+    # Check if user can edit this offender
+    if not user_can_edit_offender(request.user, offender):
+        messages.error(request, 'You do not have permission to update this offender.')
+        return redirect('offenders:offender_detail', pk=offender.pk)
     
     if request.method == 'POST':
         form = OffenderForm(request.POST, instance=offender)
         if form.is_valid():
             offender = form.save()
             messages.success(request, f'Offender {offender.offender_id} updated successfully!')
-            return redirect('offender_detail', pk=offender.pk)
+            return redirect('offenders:offender_detail', pk=offender.pk)
     else:
         form = OffenderForm(instance=offender)
     
@@ -148,7 +202,7 @@ def offender_delete(request, pk):
     
     if not request.user.is_admin():
         messages.error(request, 'Only administrators can delete offenders.')
-        return redirect('offender_list')
+        return redirect('offenders:offender_list')
     
     offender = get_object_or_404(Offender, pk=pk)
     
@@ -156,7 +210,7 @@ def offender_delete(request, pk):
         offender.is_active = False
         offender.save()
         messages.success(request, f'Offender {offender.offender_id} deactivated.')
-        return redirect('offender_list')
+        return redirect('offenders:offender_list')
     
     context = {
         'offender': offender
@@ -170,7 +224,7 @@ def case_create(request, offender_pk):
     
     if not request.user.is_admin() and not request.user.is_officer():
         messages.error(request, 'You do not have permission to create cases.')
-        return redirect('offender_detail', pk=offender_pk)
+        return redirect('offenders:offender_detail', pk=offender_pk)
     
     offender = get_object_or_404(Offender, pk=offender_pk)
     
@@ -181,7 +235,7 @@ def case_create(request, offender_pk):
             case.offender = offender
             case.save()
             messages.success(request, f'Case {case.case_number} created successfully!')
-            return redirect('offender_detail', pk=offender.pk)
+            return redirect('offenders:offender_detail', pk=offender.pk)
     else:
         form = CaseForm(initial={'offender': offender})
     
@@ -199,7 +253,7 @@ def assessment_create(request, offender_pk):
     
     if not request.user.is_admin() and not request.user.is_officer():
         messages.error(request, 'You do not have permission to create assessments.')
-        return redirect('offender_detail', pk=offender_pk)
+        return redirect('offenders:offender_detail', pk=offender_pk)
     
     offender = get_object_or_404(Offender, pk=offender_pk)
     
@@ -221,9 +275,23 @@ def assessment_create(request, offender_pk):
             else:
                 offender.risk_level = Offender.RiskLevel.HIGH
             offender.save()
+
+            # Automatic ML prediction after assessment (best feature coverage).
+            try:
+                from ml_models.auto_predict import auto_predict_offender
+
+                auto_predict_offender(
+                    offender=offender,
+                    assessment=assessment,
+                    made_by=request.user,
+                    min_feature_coverage=0.0,
+                )
+            except Exception:
+                # Prediction should never block assessment creation.
+                pass
             
             messages.success(request, f'Assessment created successfully! Risk score: {score:.1f}')
-            return redirect('offender_detail', pk=offender.pk)
+            return redirect('offenders:offender_detail', pk=offender.pk)
     else:
         form = AssessmentForm(initial={
             'offender': offender,
@@ -245,7 +313,7 @@ def dashboard_stats(request):
     from django.db.models import Count, Q
     
     if request.user.is_offender():
-        return redirect('offender_detail', pk=request.user.offender_profile.pk)
+        return redirect('offenders:offender_detail', pk=request.user.offender_profile.pk)
     
     # Basic stats
     total_offenders = Offender.objects.count()
@@ -358,3 +426,185 @@ def assessment_list(request):
     }
     
     return render(request, 'offenders/assessment_list.html', context)
+
+
+# ============================================================================
+# ML PREDICTION ENDPOINTS
+# ============================================================================
+
+@login_required
+@require_http_methods(["POST"])
+def predict_offender_risk(request, offender_id):
+    """API endpoint to get ML risk prediction for an offender."""
+    try:
+        offender = Offender.objects.get(id=offender_id)
+        
+        # Check permissions
+        if not user_can_view_offender(request.user, offender):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        
+        # Get prediction
+        risk_score, risk_level = offender.get_ml_prediction()
+        
+        if risk_score is None:
+            return JsonResponse({
+                'success': False,
+                'error': 'Could not generate prediction - no model available or missing features'
+            }, status=400)
+        
+        # Update and return
+        offender.update_ml_risk_score()
+        
+        return JsonResponse({
+            'success': True,
+            'offender_id': offender.offender_id,
+            'risk_score': round(risk_score, 4),
+            'risk_level': risk_level,
+            'risk_percentage': f"{risk_score * 100:.1f}%"
+        })
+    
+    except Offender.DoesNotExist:
+        return JsonResponse({'error': 'Offender not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_offender_risk_score(request, offender_id):
+    """Get current ML risk score for an offender."""
+    try:
+        offender = Offender.objects.get(id=offender_id)
+        
+        # Check permissions
+        if not user_can_view_offender(request.user, offender):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        
+        risk_score = offender.ml_risk_score
+        
+        if risk_score is None:
+            risk_level = 'unknown'
+        elif risk_score < 0.33:
+            risk_level = 'low'
+        elif risk_score < 0.66:
+            risk_level = 'medium'
+        else:
+            risk_level = 'high'
+        
+        return JsonResponse({
+            'offender_id': offender.offender_id,
+            'ml_risk_score': risk_score,
+            'risk_level': risk_level,
+            'last_updated': offender.date_updated.isoformat() if offender.date_updated else None
+        })
+    
+    except Offender.DoesNotExist:
+        return JsonResponse({'error': 'Offender not found'}, status=404)
+
+
+@login_required
+@require_http_methods(["GET"])
+def batch_predict_risk(request):
+    """Batch predict ML risk for multiple offenders."""
+    try:
+        # Get list of offender IDs from query params
+        offender_ids = request.GET.getlist('offender_ids')
+        
+        if not offender_ids:
+            # If no IDs provided, get user's assigned offenders
+            if request.user.role == User.Role.OFFICER:
+                offender_ids = Case.objects.filter(
+                    assigned_officer=request.user,
+                    status='active'
+                ).values_list('offender_id', flat=True)
+            else:
+                return JsonResponse({'error': 'No offender IDs provided'}, status=400)
+        
+        results = []
+        errors = []
+        
+        for offender_id in offender_ids[:50]:  # Limit to 50 for performance
+            try:
+                offender = Offender.objects.get(id=offender_id)
+                
+                # Check permissions
+                if not user_can_view_offender(request.user, offender):
+                    continue
+                
+                risk_score = offender.update_ml_risk_score()
+                
+                if risk_score is not None:
+                    results.append({
+                        'offender_id': offender.offender_id,
+                        'id': offender.id,
+                        'risk_score': round(risk_score, 4),
+                        'risk_level': 'low' if risk_score < 0.33 else 'medium' if risk_score < 0.66 else 'high'
+                    })
+                else:
+                    errors.append({
+                        'offender_id': offender.offender_id,
+                        'error': 'Could not generate prediction'
+                    })
+            except Offender.DoesNotExist:
+                errors.append({
+                    'offender_id': offender_id,
+                    'error': 'Offender not found'
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'total_processed': len(results) + len(errors),
+            'successful': len(results),
+            'failed': len(errors),
+            'results': results,
+            'errors': errors if errors else None
+        })
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def risk_comparison_view(request, offender_id):
+    """View showing comparison between officer assessment and ML prediction."""
+    try:
+        offender = Offender.objects.get(id=offender_id)
+        
+        if not user_can_view_offender(request.user, offender):
+            return redirect('home')
+        
+        # Get latest assessment
+        latest_assessment = offender.assessments.latest('created_at') if hasattr(offender, 'assessments') else None
+        
+        # Get ML prediction
+        risk_score, risk_level = offender.get_ml_prediction()
+        
+        # Map officer risk level to percentage range for comparison
+        officer_risk_map = {
+            'low': 0.15,
+            'medium': 0.50,
+            'high': 0.85
+        }
+        officer_risk_percentage = officer_risk_map.get(offender.risk_level, 0.5)
+        
+        # Calculate agreement
+        if risk_score is not None:
+            ml_risk_level = 'low' if risk_score < 0.33 else 'medium' if risk_score < 0.66 else 'high'
+            agreement = ml_risk_level == offender.risk_level
+        else:
+            agreement = None
+        
+        context = {
+            'offender': offender,
+            'latest_assessment': latest_assessment,
+            'officer_risk_level': offender.risk_level,
+            'officer_risk_percentage': officer_risk_percentage,
+            'ml_risk_score': risk_score,
+            'ml_risk_level': risk_level,
+            'agreement': agreement
+        }
+        
+        return render(request, 'offenders/risk_comparison.html', context)
+    
+    except Offender.DoesNotExist:
+        return redirect('home')

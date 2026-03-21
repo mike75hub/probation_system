@@ -8,7 +8,7 @@ from .models import Program, ProgramCategory, Enrollment, Session, Attendance
 class ProgramCategoryForm(forms.ModelForm):
     class Meta:
         model = ProgramCategory
-        fields = ['name', 'description', 'icon', 'color']
+        fields = ['name', 'slug', 'description', 'icon', 'color', 'is_active', 'display_order']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
             'icon': forms.TextInput(attrs={'placeholder': 'fas fa-icon-name'}),
@@ -28,23 +28,29 @@ class ProgramForm(forms.ModelForm):
     class Meta:
         model = Program
         fields = [
-            'name', 'description', 'program_type', 'category',
-            'objectives', 'curriculum', 'duration_weeks', 'hours_per_week',
+            'code', 'name', 'description', 'program_type', 'category',
+            'frequency', 'objectives', 'curriculum', 'duration_weeks', 'hours_per_week',
             'max_participants', 'eligibility_criteria', 'target_risk_level',
+            'referral_required', 'prerequisites', 'completion_criteria', 'expected_outcomes',
             'facilitator', 'co_facilitator', 'facilitator_notes',
-            'location', 'schedule_description', 'start_date', 'end_date',
+            'delivery_method', 'location', 'schedule_description', 'start_date', 'end_date', 'enrollment_deadline',
             'cost_per_participant', 'resources_required', 'status', 'is_featured'
         ]
         widgets = {
+            'code': forms.TextInput(attrs={'placeholder': 'E.g., VTC-001'}),
             'description': forms.Textarea(attrs={'rows': 4}),
             'objectives': forms.Textarea(attrs={'rows': 3}),
             'curriculum': forms.Textarea(attrs={'rows': 5}),
             'eligibility_criteria': forms.Textarea(attrs={'rows': 3}),
+            'prerequisites': forms.Textarea(attrs={'rows': 3}),
+            'completion_criteria': forms.Textarea(attrs={'rows': 3}),
+            'expected_outcomes': forms.Textarea(attrs={'rows': 3}),
             'facilitator_notes': forms.Textarea(attrs={'rows': 3}),
             'schedule_description': forms.Textarea(attrs={'rows': 2}),
             'resources_required': forms.Textarea(attrs={'rows': 3}),
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'enrollment_deadline': forms.DateInput(attrs={'type': 'date'}),
         }
     
     def clean(self):

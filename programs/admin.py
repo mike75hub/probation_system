@@ -7,8 +7,10 @@ from .models import ProgramCategory, Program, Enrollment, Session, Attendance
 
 @admin.register(ProgramCategory)
 class ProgramCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'icon_display', 'color_display', 'program_count']
+    list_display = ['name', 'slug', 'is_active', 'display_order', 'icon_display', 'color_display', 'program_count', 'created_at']
     search_fields = ['name', 'description']
+    list_filter = ['is_active', 'color']
+    ordering = ['display_order', 'name']
     
     def icon_display(self, obj):
         return format_html('<i class="{}"></i> {}', obj.icon, obj.icon)
@@ -28,29 +30,43 @@ class ProgramCategoryAdmin(admin.ModelAdmin):
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
     list_display = [
-        'name', 'program_type', 'status_badge', 'duration_weeks',
+        'name', 'code', 'program_type', 'delivery_method', 'status_badge', 'duration_weeks',
         'current_participants', 'max_participants', 'start_date', 'is_featured'
     ]
-    list_filter = ['program_type', 'status', 'category', 'is_featured', 'start_date']
-    search_fields = ['name', 'description', 'objectives']
+    list_filter = ['program_type', 'delivery_method', 'status', 'category', 'is_featured', 'start_date']
+    search_fields = ['name', 'code', 'description', 'objectives']
     readonly_fields = ['created_at', 'updated_at', 'created_by']
     filter_horizontal = []
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('name', 'description', 'program_type', 'category', 'objectives')
+            'fields': ('code', 'name', 'description', 'program_type', 'category', 'objectives')
         }),
         ('Program Details', {
-            'fields': ('curriculum', 'duration_weeks', 'hours_per_week', 'max_participants')
+            'fields': ('frequency', 'curriculum', 'duration_weeks', 'hours_per_week', 'max_participants')
         }),
         ('Eligibility', {
-            'fields': ('eligibility_criteria', 'target_risk_level')
+            'fields': (
+                'eligibility_criteria',
+                'target_risk_level',
+                'referral_required',
+                'prerequisites',
+                'completion_criteria',
+                'expected_outcomes',
+            )
         }),
         ('Facilitators', {
             'fields': ('facilitator', 'co_facilitator', 'facilitator_notes')
         }),
         ('Schedule & Location', {
-            'fields': ('location', 'schedule_description', 'start_date', 'end_date')
+            'fields': (
+                'delivery_method',
+                'location',
+                'schedule_description',
+                'start_date',
+                'end_date',
+                'enrollment_deadline',
+            )
         }),
         ('Cost & Resources', {
             'fields': ('cost_per_participant', 'resources_required')

@@ -209,6 +209,15 @@
                                        class="btn btn-outline-success" title="Download">
                                         <i class="fas fa-download"></i>
                                     </a>
+                                    {% if user.is_superuser or user.role == 'admin' or dataset.uploaded_by_id == user.id %}
+                                    <form method="post" action="{% url 'datasets:dataset_delete' dataset.pk %}" class="d-inline"
+                                          onsubmit="return confirm('Delete dataset &quot;{{ dataset.name|escapejs }}&quot;?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>

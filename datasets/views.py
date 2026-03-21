@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Sum, Avg
 from .models import Dataset, DatasetSource, FeatureMap
 from .forms import DatasetUploadForm, DatasetSourceForm, FeatureMapForm, DatasetAnalysisForm, DatasetPreviewForm, DatasetUpdateForm
@@ -123,14 +123,27 @@ class DatasetUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, f"Dataset '{self.object.name}' updated successfully!")
         return super().form_valid(form)
 
-class DatasetDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class DatasetDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Dataset
     template_name = 'datasets/dataset_delete.html'
     success_url = reverse_lazy('datasets:dataset_list')
-    permission_required = 'datasets.delete_dataset'
+
+    def test_func(self):
+        user = self.request.user
+        dataset = self.get_object()
+        return bool(
+            getattr(user, "is_superuser", False)
+            or getattr(user, "role", None) == "admin"
+            or (dataset.uploaded_by_id == user.id)
+        )
     
     def delete(self, request, *args, **kwargs):
         dataset = self.get_object()
+        # Remove stored files as well (avoid leaving orphaned files in MEDIA_ROOT).
+        if getattr(dataset, "original_file", None):
+            dataset.original_file.delete(save=False)
+        if getattr(dataset, "processed_file", None):
+            dataset.processed_file.delete(save=False)
         messages.success(request, f"Dataset '{dataset.name}' deleted successfully!")
         return super().delete(request, *args, **kwargs)
 
@@ -150,6 +163,43 @@ class DatasetSourceCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         messages.success(self.request, "Data source created successfully!")
         return super().form_valid(form)
+
+class DatasetSourceDetailView(LoginRequiredMixin, DetailView):
+    model = DatasetSource
+    template_name = 'datasets/source_detail.html'
+    context_object_name = 'source'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["datasets"] = (
+            Dataset.objects.filter(source=self.object).order_by("-upload_date")
+        )
+        return context
+
+class DatasetSourceDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = DatasetSource
+    template_name = 'datasets/source_delete.html'
+    success_url = reverse_lazy('datasets:source_list')
+
+    def test_func(self):
+        user = self.request.user
+        return bool(getattr(user, "is_superuser", False) or getattr(user, "role", None) == "admin")
+
+    def post(self, request, *args, **kwargs):
+        # Prevent deleting a source while it still has datasets; user can delete those first.
+        source = self.get_object()
+        if source.datasets.exists():
+            messages.error(
+                request,
+                "Cannot delete this data source while it still has datasets. Delete those datasets first.",
+            )
+            return redirect("datasets:source_detail", pk=source.pk)
+        return super().post(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        source = self.get_object()
+        messages.success(request, f"Data source '{source.name}' deleted successfully!")
+        return super().delete(request, *args, **kwargs)
 
 # Feature Map Views
 class FeatureMapCreateView(LoginRequiredMixin, CreateView):

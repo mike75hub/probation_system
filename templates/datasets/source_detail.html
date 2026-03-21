@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Data Source - Probation System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">{{ source.name }}</h1>
+            <p class="text-muted mb-0">{{ source.get_source_type_display }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'datasets:source_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+            {% if user.is_superuser or user.role == 'admin' %}
+            <form method="post" action="{% url 'datasets:source_delete' source.pk %}"
+                  onsubmit="return confirm('Delete data source \"{{ source.name|escapejs }}\"? You must delete its datasets first.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="fas fa-trash me-2"></i>Delete Source
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Source Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="small text-muted">Description</div>
+                        <div>{{ source.description|default:"—" }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="small text-muted">Contact</div>
+                        {% if source.contact_person %}
+                            <div>{{ source.contact_person }}</div>
+                            <div class="small text-muted">{{ source.contact_email }}</div>
+                        {% else %}
+                            <div>—</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <div class="small text-muted">Reliability</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 8px;">
+                                <div class="progress-bar bg-{% if source.reliability_score > 7 %}success{% elif source.reliability_score > 4 %}warning{% else %}danger{% endif %}"
+                                     role="progressbar"
+                                     style="width: {% widthratio source.reliability_score 10 100 %}%">
+                                </div>
+                            </div>
+                            <div class="small">{{ source.reliability_score }}/10</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="small text-muted">Datasets</div>
+                        <div class="fw-bold">{{ source.datasets.count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-table me-2"></i>Datasets From This Source</h6>
+                    <a href="{% url 'datasets:dataset_upload' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload Dataset
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if datasets %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Uploaded</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dataset in datasets %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ dataset.name }}</div>
+                                        <div class="small text-muted">{{ dataset.get_file_size_display }} • {{ dataset.file_format|upper }}</div>
+                                    </td>
+                                    <td>{{ dataset.get_dataset_type_display }}</td>
+                                    <td><span class="badge bg-{{ dataset.get_status_color }}">{{ dataset.get_status_display }}</span></td>
+                                    <td class="small text-muted">{{ dataset.upload_date|date:"M d, Y" }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'datasets:dataset_detail' dataset.pk %}" class="btn btn-outline-primary" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if user.is_superuser or user.role == 'admin' or dataset.uploaded_by_id == user.id %}
+                                            <form method="post" action="{% url 'datasets:dataset_delete' dataset.pk %}" class="d-inline"
+                                                  onsubmit="return confirm('Delete dataset \"{{ dataset.name|escapejs }}\"?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                        <h6 class="mb-1">No datasets yet</h6>
+                        <p class="text-muted mb-3">Upload a dataset and link it to this data source.</p>
+                        <a href="{% url 'datasets:dataset_upload' %}" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload Dataset
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">{{ officer.get_full_name|default:officer.username }}</h4>
+            <div class="text-muted small">
+                {{ officer.designation|default:"Probation Officer" }}{% if officer.email %} • {{ officer.email }}{% endif %}{% if officer.phone %} • {{ officer.phone }}{% endif %}
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            {% if user.is_admin %}
+            <a href="{% url 'accounts:user_detail' officer.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-pen me-2"></i>Edit Profile
+            </a>
+            {% endif %}
+            <a href="{% url 'accounts:officers_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-muted small">Active Cases</div>
+                    <div class="h4 mb-0">{{ stats.active_cases }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-muted small">Offenders</div>
+                    <div class="h4 mb-0">{{ stats.offenders }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-muted small">High Risk</div>
+                    <div class="h4 mb-0 text-danger">{{ stats.high_risk }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-muted small">Medium Risk</div>
+                    <div class="h4 mb-0 text-warning">{{ stats.medium_risk }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-muted small">Low Risk</div>
+                    <div class="h4 mb-0 text-success">{{ stats.low_risk }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-gavel me-2"></i>Active Cases</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Case</th>
+                                    <th>Offender</th>
+                                    <th>Ends</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for case in active_cases %}
+                                <tr>
+                                    <td class="fw-medium">{{ case.case_number }}</td>
+                                    <td>
+                                        <a href="{% url 'offenders:offender_detail' case.offender.pk %}">
+                                            {{ case.offender.get_full_name|default:case.offender.offender_id }}
+                                        </a>
+                                    </td>
+                                    <td>{{ case.sentence_end }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ case.get_status_color }}">{{ case.get_status_display }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No active cases assigned.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-users me-2"></i>Offenders</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Offender</th>
+                                    <th>Risk</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for offender in offenders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'offenders:offender_detail' offender.pk %}">
+                                            {{ offender.get_full_name|default:offender.offender_id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ offender.get_risk_color }}">{{ offender.get_risk_level_display }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted py-4">No offenders assigned.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -227,19 +227,27 @@ $(document).ready(function() {
                     `;
                     
                     if (result.risk_label) {
+                        const riskLabel = result.risk_label;
+                        const riskColor =
+                            riskLabel === 'High Risk' ? 'danger' :
+                            riskLabel === 'Medium Risk' ? 'warning' : 'success';
                         html += `
-                            <div class="display-4 fw-bold text-${result.risk_level === 'High Risk' ? 'danger' : result.risk_level === 'Medium Risk' ? 'warning' : 'success'}">
-                                ${result.risk_label}
+                            <div class="display-4 fw-bold text-${riskColor}">
+                                ${riskLabel}
                             </div>
                             <p class="text-muted">Risk Assessment</p>
                             <div class="mt-3">
-                                <h6>Confidence: ${(result.confidence * 100).toFixed(1)}%</h6>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar bg-${result.confidence > 0.8 ? 'success' : result.confidence > 0.6 ? 'warning' : 'danger'}" 
-                                         role="progressbar" 
-                                         style="width: ${result.confidence * 100}%">
+                                ${result.confidence !== null && result.confidence !== undefined ? `
+                                    <h6>Confidence: ${(result.confidence * 100).toFixed(1)}%</h6>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-${result.confidence > 0.8 ? 'success' : result.confidence > 0.6 ? 'warning' : 'danger'}"
+                                             role="progressbar"
+                                             style="width: ${result.confidence * 100}%">
+                                        </div>
                                     </div>
-                                </div>
+                                ` : `
+                                    <h6>Confidence: N/A</h6>
+                                `}
                             </div>
                         `;
                     } else if (result.will_recidivate !== undefined) {

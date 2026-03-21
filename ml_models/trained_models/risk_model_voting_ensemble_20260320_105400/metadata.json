@@ -1,0 +1,45 @@
+{
+  "model_name": "voting_ensemble",
+  "algorithm": "voting_ensemble",
+  "created_at": "2026-03-20T10:54:00.407423",
+  "metrics": {
+    "accuracy": 0.74,
+    "precision": 0.2222222222222222,
+    "recall": 0.09523809523809523,
+    "f1_score": 0.13333333333333333,
+    "auc_roc": 0.729957805907173,
+    "tn": 72,
+    "fp": 7,
+    "fn": 19,
+    "tp": 2,
+    "classification_report": {
+      "0": {
+        "precision": 0.7912087912087912,
+        "recall": 0.9113924050632911,
+        "f1-score": 0.8470588235294118,
+        "support": 79.0
+      },
+      "1": {
+        "precision": 0.2222222222222222,
+        "recall": 0.09523809523809523,
+        "f1-score": 0.13333333333333333,
+        "support": 21.0
+      },
+      "accuracy": 0.74,
+      "macro avg": {
+        "precision": 0.5067155067155067,
+        "recall": 0.5033152501506932,
+        "f1-score": 0.49019607843137253,
+        "support": 100.0
+      },
+      "weighted avg": {
+        "precision": 0.6717216117216117,
+        "recall": 0.74,
+        "f1-score": 0.6971764705882353,
+        "support": 100.0
+      }
+    }
+  },
+  "feature_count": 45,
+  "is_production": true
+}

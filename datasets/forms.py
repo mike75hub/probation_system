@@ -42,7 +42,15 @@ class DatasetUploadForm(forms.ModelForm):
             # Get file format
             ext = file.name.split('.')[-1].lower()
             if ext == 'csv':
-                DatasetValidator.validate_csv_structure(file.temporary_file_path())
+                # `InMemoryUploadedFile` doesn't have `temporary_file_path()`. Validate from the
+                # uploaded file object and ensure we reset the read pointer afterwards.
+                try:
+                    if hasattr(file, 'seek'):
+                        file.seek(0)
+                    DatasetValidator.validate_csv_structure(file)
+                finally:
+                    if hasattr(file, 'seek'):
+                        file.seek(0)
         
         return file
     

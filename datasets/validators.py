@@ -1,6 +1,10 @@
 """
 Dataset validation utilities.
 """
+import csv
+import os
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 from django.core.exceptions import ValidationError
@@ -27,27 +31,70 @@ class DatasetValidator:
     
     @staticmethod
     def validate_csv_structure(file_path):
-        """Validate CSV file structure."""
+        """Validate CSV file structure.
+
+        Accepts a filesystem path, a Django UploadedFile, or any file-like object.
+        """
         try:
-            # Try to read the CSV file
-            df = pd.read_csv(file_path, nrows=5)
-            
-            # Check if dataframe is not empty
-            if df.empty:
-                raise ValidationError("CSV file is empty")
-            
-            # Check for valid column names
-            if any(col.strip() == '' for col in df.columns):
-                raise ValidationError("CSV contains empty column names")
-            
-            return True
-            
-        except pd.errors.EmptyDataError:
-            raise ValidationError("CSV file is empty")
-        except pd.errors.ParserError as e:
+            # Prefer a real path if available (e.g. TemporaryUploadedFile).
+            tmp_path_fn = getattr(file_path, "temporary_file_path", None)
+            if callable(tmp_path_fn):
+                file_path = tmp_path_fn()
+
+            if isinstance(file_path, (str, os.PathLike, Path)):
+                with open(file_path, "r", encoding="utf-8-sig", errors="replace", newline="") as fp:
+                    return DatasetValidator._validate_csv_fp(fp)
+
+            fp = getattr(file_path, "file", file_path)
+            pos = None
+            try:
+                if hasattr(fp, "tell") and hasattr(fp, "seek"):
+                    pos = fp.tell()
+                    fp.seek(0)
+
+                return DatasetValidator._validate_csv_fp(fp)
+            finally:
+                if pos is not None and hasattr(fp, "seek"):
+                    fp.seek(pos)
+
+        except (UnicodeDecodeError, csv.Error) as e:
             raise ValidationError(f"CSV parsing error: {str(e)}")
         except Exception as e:
             raise ValidationError(f"Error validating CSV: {str(e)}")
+
+    @staticmethod
+    def _validate_csv_fp(fp):
+        # Read header line
+        header_line = fp.readline()
+        if isinstance(header_line, (bytes, bytearray)):
+            header_line = header_line.decode("utf-8-sig", errors="replace")
+
+        if not header_line or not header_line.strip():
+            raise ValidationError("CSV file is empty")
+
+        try:
+            header = next(csv.reader([header_line]))
+        except csv.Error as e:
+            raise ValidationError(f"CSV parsing error: {str(e)}")
+
+        if not header:
+            raise ValidationError("CSV file is empty")
+
+        if any((col or "").strip() == "" for col in header):
+            raise ValidationError("CSV contains empty column names")
+
+        # Ensure there's at least one non-empty data row after the header.
+        for _ in range(50):
+            line = fp.readline()
+            if not line:
+                break
+            if isinstance(line, (bytes, bytearray)):
+                line = line.decode("utf-8", errors="replace")
+            if line.strip():
+                # There is data (not just header)
+                return True
+
+        raise ValidationError("CSV file is empty")
     
     @staticmethod
     def validate_data_types(df, column_specifications):
