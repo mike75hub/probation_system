@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
+from django.views.decorators.http import require_http_methods
 from .models import Offender, Case, Assessment
 from .forms import OffenderForm, CaseForm, AssessmentForm, OffenderSearchForm
 from accounts.models import User

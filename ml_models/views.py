@@ -26,9 +26,10 @@ from .trainers import ModelTrainer, RiskAssessmentTrainer
 from .predictors import PredictionService
 from .ml_pipeline import MLPipeline
 from datasets.models import Dataset
+from accounts.permissions import AdminRequiredMixin, admin_required
 
 # ML Model Views
-class MLModelListView(LoginRequiredMixin, ListView):
+class MLModelListView(AdminRequiredMixin, ListView):
     model = MLModel
     template_name = 'ml_models/model_list.html'
     context_object_name = 'models'
@@ -91,7 +92,7 @@ class MLModelListView(LoginRequiredMixin, ListView):
         
         return context
 
-class MLModelDetailView(LoginRequiredMixin, DetailView):
+class MLModelDetailView(AdminRequiredMixin, DetailView):
     model = MLModel
     template_name = 'ml_models/model_detail.html'
     context_object_name = 'model'
@@ -127,7 +128,7 @@ class MLModelDetailView(LoginRequiredMixin, DetailView):
         
         return context
 
-class MLModelCreateView(LoginRequiredMixin, CreateView):
+class MLModelCreateView(AdminRequiredMixin, CreateView):
     model = MLModel
     form_class = MLModelForm
     template_name = 'ml_models/model_form.html'
@@ -144,7 +145,7 @@ class MLModelCreateView(LoginRequiredMixin, CreateView):
         messages.error(self.request, "Please correct the errors below.")
         return super().form_invalid(form)
 
-class MLModelUpdateView(LoginRequiredMixin, UpdateView):
+class MLModelUpdateView(AdminRequiredMixin, UpdateView):
     model = MLModel
     form_class = MLModelForm
     template_name = 'ml_models/model_form.html'
@@ -156,7 +157,7 @@ class MLModelUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, f"ML Model '{self.object.name}' updated successfully!")
         return super().form_valid(form)
 
-class MLModelDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class MLModelDeleteView(AdminRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = MLModel
     template_name = 'ml_models/model_delete.html'
     success_url = reverse_lazy('ml_models:model_list')
@@ -168,7 +169,7 @@ class MLModelDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().delete(request, *args, **kwargs)
 
 # Training Job Views
-class TrainingJobListView(LoginRequiredMixin, ListView):
+class TrainingJobListView(AdminRequiredMixin, ListView):
     model = TrainingJob
     template_name = 'ml_models/trainingjob_list.html'
     context_object_name = 'jobs'
@@ -209,13 +210,13 @@ class TrainingJobListView(LoginRequiredMixin, ListView):
         
         return context
 
-class TrainingJobDetailView(LoginRequiredMixin, DetailView):
+class TrainingJobDetailView(AdminRequiredMixin, DetailView):
     model = TrainingJob
     template_name = 'ml_models/trainingjob_detail.html'
     context_object_name = 'job'
 
 # Prediction Views
-class PredictionListView(LoginRequiredMixin, ListView):
+class PredictionListView(AdminRequiredMixin, ListView):
     model = Prediction
     template_name = 'ml_models/prediction_list.html'
     context_object_name = 'predictions'
@@ -284,13 +285,13 @@ class PredictionListView(LoginRequiredMixin, ListView):
         
         return context
 
-class PredictionDetailView(LoginRequiredMixin, DetailView):
+class PredictionDetailView(AdminRequiredMixin, DetailView):
     model = Prediction
     template_name = 'ml_models/prediction_detail.html'
     context_object_name = 'prediction'
 
 # Function-based views for ML operations
-@login_required
+@admin_required
 def train_model(request):
     """Train a new ML model."""
     if request.method == 'POST':
@@ -484,7 +485,7 @@ def train_model(request):
     
     return render(request, 'ml_models/train_model.html', {'form': form})
 
-@login_required
+@admin_required
 def make_prediction(request):
     """Make a single prediction."""
     if request.method == 'POST':
@@ -584,7 +585,7 @@ def make_prediction(request):
     
     return render(request, 'ml_models/make_prediction.html', {'form': form})
 
-@login_required
+@admin_required
 def batch_prediction(request):
     """Make batch predictions from file."""
     if request.method == 'POST':
@@ -647,7 +648,7 @@ def batch_prediction(request):
     
     return render(request, 'ml_models/batch_prediction.html', {'form': form})
 
-@login_required
+@admin_required
 @csrf_exempt
 def get_model_features(request):
     """Get feature columns for a model (AJAX)."""
@@ -670,7 +671,7 @@ def get_model_features(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
-@login_required
+@admin_required
 def deploy_model(request, pk):
     """Deploy a trained model."""
     model = get_object_or_404(MLModel, pk=pk)
@@ -686,7 +687,7 @@ def deploy_model(request, pk):
     messages.success(request, f"Model '{model.name}' deployed successfully!")
     return redirect('ml_models:model_detail', pk=pk)
 
-@login_required
+@admin_required
 def retire_model(request, pk):
     """Retire a deployed model."""
     model = get_object_or_404(MLModel, pk=pk)
@@ -698,7 +699,7 @@ def retire_model(request, pk):
     messages.success(request, f"Model '{model.name}' retired successfully!")
     return redirect('ml_models:model_detail', pk=pk)
 
-@login_required
+@admin_required
 def model_performance(request, pk):
     """View model performance metrics."""
     model = get_object_or_404(MLModel, pk=pk)
@@ -747,7 +748,7 @@ def model_performance(request, pk):
     
     return render(request, 'ml_models/model_performance.html', context)
 
-@login_required
+@admin_required
 def ml_dashboard(request):
     """ML Dashboard view."""
     # Model statistics

@@ -293,50 +293,52 @@
                     </div>
 
                     <!-- AI Area Section with Accordion -->
-                    <div class="sidebar-section">
-                        <div class="accordion" id="aiAccordion">
-                            <div class="accordion-item border-0 bg-transparent">
-                                <h2 class="accordion-header" id="aiHeading">
-                                    <button class="accordion-button side-nav-toggle px-3 py-3 collapsed" 
-                                            type="button" 
-                                            data-bs-toggle="collapse" 
-                                            data-bs-target="#aiCollapse" 
-                                            aria-expanded="false" 
-                                            aria-controls="aiCollapse"
-                                            style="background: linear-gradient(135deg, #f0f7ff, #e8f0fe); border-radius: 16px; border: none; box-shadow: none;">
-                                        <i class="bi bi-robot me-2" style="color: #005cb9;"></i>
-                                        <span class="fw-semibold">AI & Analytics</span>
-                                        <span class="badge bg-gradient-primary ms-2 text-white" style="background: linear-gradient(135deg, #005cb9, #003b7a);">New</span>
-                                    </button>
-                                </h2>
-                                <div id="aiCollapse" class="accordion-collapse collapse" aria-labelledby="aiHeading" data-bs-parent="#aiAccordion">
-                                    <div class="accordion-body px-0 pb-0 pt-3">
-                                        <nav class="side-nav" style="display: flex; flex-direction: column; gap: 0.15rem;">
-                                            <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
-                                               href="{% url 'ml_models:model_list' %}"
-                                               style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
-                                                <i class="bi bi-cpu me-3" style="font-size: 0.9rem; width: 20px;"></i>
-                                                <span>ML Models</span>
-                                                <span class="ms-auto badge rounded-pill" style="background: rgba(2,132,199,0.1); color: #0284c7; font-weight: 500;">4</span>
-                                            </a>
-                                            <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
-                                               href="{% url 'ml_models:make_prediction' %}"
-                                               style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
-                                                <i class="bi bi-graph-up me-3" style="font-size: 0.9rem; width: 20px;"></i>
-                                                <span>Predictions</span>
-                                            </a>
-                                            <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
-                                               href="{% url 'datasets:dataset_list' %}"
-                                               style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
-                                                <i class="bi bi-database me-3" style="font-size: 0.9rem; width: 20px;"></i>
-                                                <span>Datasets</span>
-                                            </a>
-                                        </nav>
+                    {% if user.is_authenticated and user.role == 'admin' %}
+                        <div class="sidebar-section">
+                            <div class="accordion" id="aiAccordion">
+                                <div class="accordion-item border-0 bg-transparent">
+                                    <h2 class="accordion-header" id="aiHeading">
+                                        <button class="accordion-button side-nav-toggle px-3 py-3 collapsed" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#aiCollapse" 
+                                                aria-expanded="false" 
+                                                aria-controls="aiCollapse"
+                                                style="background: linear-gradient(135deg, #f0f7ff, #e8f0fe); border-radius: 16px; border: none; box-shadow: none;">
+                                            <i class="bi bi-robot me-2" style="color: #005cb9;"></i>
+                                            <span class="fw-semibold">AI & Analytics</span>
+                                            <span class="badge bg-gradient-primary ms-2 text-white" style="background: linear-gradient(135deg, #005cb9, #003b7a);">New</span>
+                                        </button>
+                                    </h2>
+                                    <div id="aiCollapse" class="accordion-collapse collapse" aria-labelledby="aiHeading" data-bs-parent="#aiAccordion">
+                                        <div class="accordion-body px-0 pb-0 pt-3">
+                                            <nav class="side-nav" style="display: flex; flex-direction: column; gap: 0.15rem;">
+                                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                                   href="{% url 'ml_models:model_list' %}"
+                                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                                    <i class="bi bi-cpu me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                                    <span>ML Models</span>
+                                                    <span class="ms-auto badge rounded-pill" style="background: rgba(2,132,199,0.1); color: #0284c7; font-weight: 500;">4</span>
+                                                </a>
+                                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                                   href="{% url 'ml_models:make_prediction' %}"
+                                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                                    <i class="bi bi-graph-up me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                                    <span>Predictions</span>
+                                                </a>
+                                                <a class="side-nav-link sub-link d-flex align-items-center px-3 py-2 rounded-3 text-decoration-none" 
+                                                   href="{% url 'datasets:dataset_list' %}"
+                                                   style="color: #64748b; font-size: 0.9rem; transition: all 0.2s;">
+                                                    <i class="bi bi-database me-3" style="font-size: 0.9rem; width: 20px;"></i>
+                                                    <span>Datasets</span>
+                                                </a>
+                                            </nav>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    {% endif %}
 
                     <!-- Quick Stats -->
                     <div class="sidebar-section mt-4">
